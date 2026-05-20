@@ -15,8 +15,8 @@ public class MainActivity : MauiAppCompatActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        base.OnCreate(savedInstanceState);
         // Block screenshots and recents-thumbnail capture of paystub data when the app is backgrounded.
         Window?.AddFlags(WindowManagerFlags.Secure);
-        base.OnCreate(savedInstanceState);
     }
 }
