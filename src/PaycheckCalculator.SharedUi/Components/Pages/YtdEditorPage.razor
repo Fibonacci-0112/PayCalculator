@@ -1,0 +1,139 @@
+@page "/expert/ytd"
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<h1>YTD editor</h1>
+<p class="pc-subtitle">
+    Year-to-date totals feed wage-base tracking, Additional Medicare diagnostics, and the annual projection.
+    Update these when starting mid-year or importing prior paystubs.
+</p>
+
+<ScenarioToolbar />
+
+<section class="pc-section">
+    <h2>As of @_asOf</h2>
+    <div class="pc-grid">
+        <label>Completed pay periods
+            <input type="number" step="1" @bind="_completed" @bind:after="Apply" />
+        </label>
+        <label>As-of date
+            <input type="date" @bind="_asOf" @bind:after="Apply" />
+        </label>
+        <label>Gross wages
+            <input type="number" step="0.01" @bind="_gross" @bind:after="Apply" />
+        </label>
+        <label>Federal taxable wages
+            <input type="number" step="0.01" @bind="_federalTaxable" @bind:after="Apply" />
+        </label>
+        <label>Federal withholding
+            <input type="number" step="0.01" @bind="_federalWithholding" @bind:after="Apply" />
+        </label>
+        <label>Social Security wages
+            <input type="number" step="0.01" @bind="_ssWages" @bind:after="Apply" />
+        </label>
+        <label>Social Security tax
+            <input type="number" step="0.01" @bind="_ssTax" @bind:after="Apply" />
+        </label>
+        <label>Medicare wages
+            <input type="number" step="0.01" @bind="_medicareWages" @bind:after="Apply" />
+        </label>
+        <label>Medicare tax
+            <input type="number" step="0.01" @bind="_medicareTax" @bind:after="Apply" />
+        </label>
+        <label>Additional Medicare tax
+            <input type="number" step="0.01" @bind="_addlMedicare" @bind:after="Apply" />
+        </label>
+        <label>State wages
+            <input type="number" step="0.01" @bind="_stateWages" @bind:after="Apply" />
+        </label>
+        <label>State withholding
+            <input type="number" step="0.01" @bind="_stateWithholding" @bind:after="Apply" />
+        </label>
+        <label>Pre-tax deductions
+            <input type="number" step="0.01" @bind="_preTax" @bind:after="Apply" />
+        </label>
+        <label>Post-tax deductions
+            <input type="number" step="0.01" @bind="_postTax" @bind:after="Apply" />
+        </label>
+    </div>
+</section>
+
+<section class="pc-section">
+    <h2>Wage-base diagnostics</h2>
+    <p>
+        2026 Social Security wage base: <strong>$184,500</strong>.
+        Remaining base before SS tax stops: <strong>@Money.Usd(Math.Max(0m, 184_500m - _ssWages))</strong>.
+    </p>
+    <p>
+        Additional Medicare threshold for current filing status (@State.W4.FilingStatus):
+        <strong>@Money.Usd(PaycheckCalculator.TaxRules.Federal2026.FederalRule2026.AdditionalMedicareThreshold[State.W4.FilingStatus])</strong>.
+        Medicare wages YTD: <strong>@Money.Usd(_medicareWages)</strong>.
+    </p>
+</section>
+
+@code {
+    private DateOnly _asOf = DateOnly.FromDateTime(DateTime.Today);
+    private int _completed;
+    private decimal _gross;
+    private decimal _federalTaxable;
+    private decimal _federalWithholding;
+    private decimal _ssWages;
+    private decimal _ssTax;
+    private decimal _medicareWages;
+    private decimal _medicareTax;
+    private decimal _addlMedicare;
+    private decimal _stateWages;
+    private decimal _stateWithholding;
+    private decimal _localWages;
+    private decimal _localWithholding;
+    private decimal _preTax;
+    private decimal _postTax;
+
+    protected override void OnInitialized()
+    {
+        State.Changed += HandleChanged;
+        Load();
+    }
+
+    public void Dispose() => State.Changed -= HandleChanged;
+
+    private void HandleChanged()
+    {
+        Load();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void Load()
+    {
+        var y = State.Ytd;
+        _asOf = y.AsOfDate;
+        _completed = y.CompletedPayPeriods;
+        _gross = y.GrossWages.Amount;
+        _federalTaxable = y.FederalTaxableWages.Amount;
+        _federalWithholding = y.FederalWithholding.Amount;
+        _ssWages = y.SocialSecurityWages.Amount;
+        _ssTax = y.SocialSecurityTax.Amount;
+        _medicareWages = y.MedicareWages.Amount;
+        _medicareTax = y.MedicareTax.Amount;
+        _addlMedicare = y.AdditionalMedicareTax.Amount;
+        _stateWages = y.StateWages.Amount;
+        _stateWithholding = y.StateWithholding.Amount;
+        _localWages = y.LocalWages.Amount;
+        _localWithholding = y.LocalWithholding.Amount;
+        _preTax = y.PreTaxDeductions.Amount;
+        _postTax = y.PostTaxDeductions.Amount;
+    }
+
+    private void Apply()
+    {
+        State.UpdateYtd(new YtdSnapshot(
+            _asOf, State.TaxYear,
+            Money.Usd(_gross), Money.Usd(_federalTaxable), Money.Usd(_federalWithholding),
+            Money.Usd(_ssWages), Money.Usd(_ssTax),
+            Money.Usd(_medicareWages), Money.Usd(_medicareTax), Money.Usd(_addlMedicare),
+            Money.Usd(_stateWages), Money.Usd(_stateWithholding),
+            Money.Usd(_localWages), Money.Usd(_localWithholding),
+            Money.Usd(_preTax), Money.Usd(_postTax),
+            _completed));
+    }
+}

@@ -1,0 +1,32 @@
+@inherits LayoutComponentBase
+
+<div class="pc-app">
+    <aside class="pc-sidebar">
+        <div class="pc-brand">
+            <strong>Paycheck Planner</strong>
+            <span class="pc-tag">2026</span>
+        </div>
+        <nav class="pc-nav">
+            <div class="pc-nav-group">Simple</div>
+            <NavLink href="/" Match="NavLinkMatch.All">Quick calculator</NavLink>
+
+            <div class="pc-nav-group">Expert</div>
+            <NavLink href="/expert/w4">W-4 setup</NavLink>
+            <NavLink href="/expert/earnings">Earnings detail</NavLink>
+            <NavLink href="/expert/deductions">Deductions</NavLink>
+            <NavLink href="/expert/ytd">YTD editor</NavLink>
+            <NavLink href="/expert/household">Household planner</NavLink>
+            <NavLink href="/expert/self-employment">Self-employment</NavLink>
+            <NavLink href="/expert/projection">Projection dashboard</NavLink>
+            <NavLink href="/expert/optimizer">Optimizer</NavLink>
+            <NavLink href="/expert/compare">Scenario comparison</NavLink>
+            <NavLink href="/expert/audit">Rule / audit details</NavLink>
+        </nav>
+        <p class="pc-disclaimer">
+            Estimates only &mdash; not professional tax advice.
+        </p>
+    </aside>
+    <main class="pc-main">
+        @Body
+    </main>
+</div>

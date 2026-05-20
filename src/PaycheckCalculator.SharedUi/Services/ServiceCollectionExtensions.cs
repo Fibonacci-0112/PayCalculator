@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IJurisdictionResolver, ManualJurisdictionResolver>();
         services.AddSingleton<OptimizationEngine>();
         services.AddSingleton<ScheduleSeCalculator>();
+        services.AddScoped<ScenarioEditorState>();
         return services;
     }
 }
