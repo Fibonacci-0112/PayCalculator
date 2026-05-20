@@ -1,0 +1,43 @@
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<div class="pc-toolbar">
+    <label>Pay frequency
+        <select @bind="State.PayFrequency">
+            @foreach (var f in Enum.GetValues<PayFrequency>())
+            {
+                <option value="@f">@f</option>
+            }
+        </select>
+    </label>
+    <label>Worker type
+        <select @bind="State.WorkerType">
+            @foreach (var w in Enum.GetValues<WorkerType>())
+            {
+                <option value="@w">@w</option>
+            }
+        </select>
+    </label>
+    <label>Home state
+        <input maxlength="2" placeholder="e.g. CA" @bind="State.HomeStateCode" />
+    </label>
+    <label>Pay date
+        <input type="date" @bind="State.PayDate" />
+    </label>
+    <button class="pc-primary" @onclick="Recalculate">Recalculate</button>
+    @if (State.LatestResult is { } r)
+    {
+        <span class="pc-pill">Net pay: <strong>@r.NetPay</strong></span>
+        <span class="pc-pill">Projected refund/due: <strong>@r.Projection.ProjectedRefundOrAmountDue</strong></span>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => State.Changed += HandleChanged;
+
+    public void Dispose() => State.Changed -= HandleChanged;
+
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    private void Recalculate() => State.Recalculate();
+}
