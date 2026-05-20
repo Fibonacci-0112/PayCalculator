@@ -1,0 +1,18 @@
+@using Microsoft.AspNetCore.Components.Web
+@using PaycheckCalculator.SharedUi.Components
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <title>Paycheck Tax Planner</title>
+    <link rel="stylesheet" href="_content/PaycheckCalculator.SharedUi/paycheck-calculator.css" />
+    <HeadOutlet @rendermode="RenderMode.InteractiveServer" />
+</head>
+<body>
+    <Routes @rendermode="RenderMode.InteractiveServer" />
+    <script src="_framework/blazor.web.js"></script>
+</body>
+</html>

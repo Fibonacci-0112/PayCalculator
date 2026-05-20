@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.Sync</RootNamespace>
+    <Description>End-to-end encrypted sync: vault keys, trusted devices, encrypted envelopes.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+  </ItemGroup>
+</Project>

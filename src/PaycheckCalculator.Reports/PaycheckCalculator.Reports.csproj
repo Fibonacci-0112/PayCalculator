@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.Reports</RootNamespace>
+    <Description>Report view models for paycheck, projection, self-employment, YTD, scenario comparison, and accountant packet.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+  </ItemGroup>
+</Project>

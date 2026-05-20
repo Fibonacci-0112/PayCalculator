@@ -1,0 +1,64 @@
+@using PaycheckCalculator.Core.Calculations
+@using PaycheckCalculator.Core.ValueObjects
+
+<section class="pc-section pc-result">
+    <h2>Paycheck result</h2>
+    <table class="pc-table">
+        <tbody>
+            <tr><th>Gross pay</th><td class="pc-money">@Result.GrossPay</td></tr>
+            <tr><th>Pre-tax deductions</th><td class="pc-money">@Result.TotalPreTaxDeductions</td></tr>
+            <tr><th>Federal taxable wages</th><td class="pc-money">@Result.FederalTaxableWages</td></tr>
+            <tr><th>Federal income tax</th><td class="pc-money">@Result.TotalFederalTax</td></tr>
+            <tr><th>FICA total</th><td class="pc-money">@Result.TotalFica</td></tr>
+            <tr><th>State &amp; local</th><td class="pc-money">@Result.TotalStateAndLocal</td></tr>
+            <tr><th>Post-tax deductions</th><td class="pc-money">@Result.TotalPostTaxDeductions</td></tr>
+            <tr class="pc-net"><th>Net pay</th><td class="pc-money">@Result.NetPay</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Paycheck-to-tax-return bridge</h3>
+    <p>
+        Projected AGI: <strong>@Result.Projection.ProjectedAdjustedGrossIncome</strong> &middot;
+        projected federal tax: <strong>@Result.Projection.ProjectedFederalTax</strong> &middot;
+        projected withholding: <strong>@Result.Projection.ProjectedFederalWithholding</strong> &middot;
+        projected refund/due: <strong>@Result.Projection.ProjectedRefundOrAmountDue</strong>
+        (confidence: @Result.Projection.Confidence)
+    </p>
+
+    @if (Result.Warnings.Count > 0)
+    {
+        <h3>Warnings</h3>
+        <ul class="pc-warnings">
+            @foreach (var w in Result.Warnings)
+            {
+                <li><strong>@w.Category</strong> &mdash; @w.Message</li>
+            }
+        </ul>
+    }
+
+    <h3>Explainability</h3>
+    <details>
+        <summary>Show formulas, rule version, and inputs for each calculated number</summary>
+        <table class="pc-table pc-explain">
+            <thead>
+                <tr><th>Line</th><th>Amount</th><th>Formula</th><th>Rule set</th><th>Source forms</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var line in Result.Explainability)
+                {
+                    <tr>
+                        <td>@line.Label</td>
+                        <td class="pc-money">@line.Amount</td>
+                        <td><code>@line.FormulaId</code><br /><small>@line.FormulaText</small></td>
+                        <td><small>@line.RuleSetVersion</small></td>
+                        <td><small>@string.Join(", ", line.SourceForms)</small></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </details>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public CalculationResult Result { get; set; } = default!;
+}

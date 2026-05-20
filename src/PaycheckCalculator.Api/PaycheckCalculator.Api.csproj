@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.Api</RootNamespace>
+    <Description>ASP.NET Core minimal API for E2EE sync, signed rule package delivery, and jurisdiction lookup proxy.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Sync\PaycheckCalculator.Sync.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.TaxRules\PaycheckCalculator.TaxRules.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.TaxRules</RootNamespace>
+    <Description>Versioned tax-rule data packages and signed rule registry for the Paycheck Tax Planning App.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+</Project>

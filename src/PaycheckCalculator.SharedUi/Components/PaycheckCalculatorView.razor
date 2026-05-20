@@ -1,0 +1,123 @@
+@using PaycheckCalculator.Core.ValueObjects
+@using PaycheckCalculator.Core.Calculations
+@inject IPaycheckCalculator Engine
+@inject IRulePackageRegistry Rules
+@inject IPaycheckScenarioStore Store
+
+<div class="pc-container">
+    <header class="pc-header">
+        <h1>Paycheck &amp; Tax Planner</h1>
+        <p class="pc-subtitle">Simple Mode &mdash; 2026 tax year. Estimates only; not professional tax advice.</p>
+    </header>
+
+    <section class="pc-section">
+        <h2>Pay basics</h2>
+        <div class="pc-grid">
+            <label>Filing status
+                <select @bind="Model.FilingStatus">
+                    @foreach (var s in Enum.GetValues<FilingStatus>())
+                    {
+                        <option value="@s">@FormatStatus(s)</option>
+                    }
+                </select>
+            </label>
+            <label>Pay frequency
+                <select @bind="Model.PayFrequency">
+                    @foreach (var f in Enum.GetValues<PayFrequency>())
+                    {
+                        <option value="@f">@f</option>
+                    }
+                </select>
+            </label>
+            <label>Worker type
+                <select @bind="Model.WorkerType">
+                    @foreach (var w in Enum.GetValues<WorkerType>())
+                    {
+                        <option value="@w">@w</option>
+                    }
+                </select>
+            </label>
+            <label>Multiple jobs / spouse works
+                <input type="checkbox" @bind="Model.MultipleJobs" />
+            </label>
+            <label>Home state (optional)
+                <input type="text" maxlength="2" @bind="Model.HomeStateCode" placeholder="e.g. CA" />
+            </label>
+        </div>
+    </section>
+
+    <section class="pc-section">
+        <h2>Earnings this period</h2>
+        <div class="pc-grid">
+            <label>Regular wages <input type="number" step="0.01" @bind="Model.RegularWages" /></label>
+            <label>Overtime wages <input type="number" step="0.01" @bind="Model.OvertimeWages" /></label>
+            <label>Bonus (supplemental) <input type="number" step="0.01" @bind="Model.BonusWages" /></label>
+        </div>
+    </section>
+
+    <section class="pc-section">
+        <h2>Pre-tax deductions</h2>
+        <div class="pc-grid">
+            <label>401(k) % of gross <input type="number" step="0.1" @bind="Model.Traditional401kPercent" /></label>
+            <label>HSA per period <input type="number" step="0.01" @bind="Model.HsaPerPeriod" /></label>
+            <label>Health insurance per period <input type="number" step="0.01" @bind="Model.HealthInsurancePerPeriod" /></label>
+        </div>
+    </section>
+
+    <section class="pc-section">
+        <h2>W-4 Steps 3 &amp; 4</h2>
+        <div class="pc-grid">
+            <label>Step 3 dependents credit (annual) <input type="number" step="1" @bind="Model.DependentsCredit" /></label>
+            <label>Step 4(a) other income (annual) <input type="number" step="1" @bind="Model.Step4aOther" /></label>
+            <label>Step 4(b) deductions (annual) <input type="number" step="1" @bind="Model.Step4bDeductions" /></label>
+            <label>Step 4(c) extra withholding per period <input type="number" step="0.01" @bind="Model.Step4cExtraPerPeriod" /></label>
+        </div>
+    </section>
+
+    <section class="pc-section">
+        <h2>Year-to-date (optional)</h2>
+        <div class="pc-grid">
+            <label>YTD gross wages <input type="number" step="0.01" @bind="Model.YtdGross" /></label>
+            <label>YTD federal withholding <input type="number" step="0.01" @bind="Model.YtdFederalWithholding" /></label>
+            <label>YTD Social Security wages <input type="number" step="0.01" @bind="Model.YtdSocialSecurityWages" /></label>
+            <label>Completed pay periods <input type="number" step="1" @bind="Model.CompletedPayPeriods" /></label>
+        </div>
+    </section>
+
+    <div class="pc-actions">
+        <button class="pc-primary" @onclick="Calculate">Calculate paycheck</button>
+        <button class="pc-secondary" @onclick="Save" disabled="@(_result is null)">Save scenario</button>
+    </div>
+
+    @if (_result is not null)
+    {
+        <ResultPanel Result="_result" />
+    }
+</div>
+
+@code {
+    private PaycheckScenarioViewModel Model { get; set; } = new();
+    private CalculationResult? _result;
+
+    private void Calculate()
+    {
+        var bundle = Rules.GetBundle(new TaxYear(Model.TaxYear));
+        _result = Engine.Calculate(Model.ToInput(), bundle);
+    }
+
+    private async Task Save()
+    {
+        if (_result is null) return;
+        await Store.SaveAsync(_result, $"Scenario {DateTime.Now:yyyy-MM-dd HH:mm}");
+    }
+
+    private static string FormatStatus(FilingStatus status) => status switch
+    {
+        FilingStatus.Single => "Single",
+        FilingStatus.MarriedFilingJointly => "Married filing jointly",
+        FilingStatus.MarriedFilingSeparately => "Married filing separately",
+        FilingStatus.HeadOfHousehold => "Head of household",
+        FilingStatus.QualifyingSurvivingSpouse => "Qualifying surviving spouse",
+        _ => status.ToString()
+    };
+}

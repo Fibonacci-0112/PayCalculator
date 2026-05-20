@@ -1,0 +1,69 @@
+{
+  "ruleSetId": "federal-2026-pub15t",
+  "taxYear": 2026,
+  "jurisdictionCode": "US",
+  "version": "2026.1.0",
+  "effectiveFrom": "2026-01-01",
+  "effectiveTo": "2026-12-31",
+  "sourceDocuments": [
+    {
+      "name": "IRS Publication 15-T",
+      "revision": "2026",
+      "url": "source-tracked-in-admin"
+    }
+  ],
+  "constants": {
+    "socialSecurityRateEmployee": 0.062,
+    "socialSecurityWageBase": 184500,
+    "medicareRateEmployee": 0.0145,
+    "additionalMedicareRate": 0.009,
+    "supplementalFlatRate": 0.22,
+    "supplementalMillionairePlusRate": 0.37,
+    "supplementalMillionairePlusThreshold": 1000000
+  },
+  "standardDeductionForWithholding": {
+    "Single": 15750,
+    "HeadOfHousehold": 23625,
+    "MarriedFilingJointly": 31500,
+    "MarriedFilingSeparately": 15750,
+    "QualifyingSurvivingSpouse": 31500
+  },
+  "additionalMedicareThreshold": {
+    "Single": 200000,
+    "HeadOfHousehold": 200000,
+    "MarriedFilingJointly": 250000,
+    "MarriedFilingSeparately": 125000,
+    "QualifyingSurvivingSpouse": 250000
+  },
+  "withholdingBrackets": {
+    "single": [
+      { "floor": 0,       "ceiling": 11925,  "baseTax": 0,         "marginalRate": 0.10 },
+      { "floor": 11925,   "ceiling": 48475,  "baseTax": 1192.50,   "marginalRate": 0.12 },
+      { "floor": 48475,   "ceiling": 103350, "baseTax": 5578.50,   "marginalRate": 0.22 },
+      { "floor": 103350,  "ceiling": 197300, "baseTax": 17651.00,  "marginalRate": 0.24 },
+      { "floor": 197300,  "ceiling": 250525, "baseTax": 40199.00,  "marginalRate": 0.32 },
+      { "floor": 250525,  "ceiling": 626350, "baseTax": 57231.00,  "marginalRate": 0.35 },
+      { "floor": 626350,  "ceiling": null,   "baseTax": 188769.75, "marginalRate": 0.37 }
+    ],
+    "marriedFilingJointly": [
+      { "floor": 0,       "ceiling": 23850,  "baseTax": 0,         "marginalRate": 0.10 },
+      { "floor": 23850,   "ceiling": 96950,  "baseTax": 2385.00,   "marginalRate": 0.12 },
+      { "floor": 96950,   "ceiling": 206700, "baseTax": 11157.00,  "marginalRate": 0.22 },
+      { "floor": 206700,  "ceiling": 394600, "baseTax": 35302.00,  "marginalRate": 0.24 },
+      { "floor": 394600,  "ceiling": 501050, "baseTax": 80398.00,  "marginalRate": 0.32 },
+      { "floor": 501050,  "ceiling": 751600, "baseTax": 114462.00, "marginalRate": 0.35 },
+      { "floor": 751600,  "ceiling": null,   "baseTax": 202154.50, "marginalRate": 0.37 }
+    ],
+    "headOfHousehold": [
+      { "floor": 0,       "ceiling": 17000,  "baseTax": 0,         "marginalRate": 0.10 },
+      { "floor": 17000,   "ceiling": 64850,  "baseTax": 1700.00,   "marginalRate": 0.12 },
+      { "floor": 64850,   "ceiling": 103350, "baseTax": 7442.00,   "marginalRate": 0.22 },
+      { "floor": 103350,  "ceiling": 197300, "baseTax": 15912.00,  "marginalRate": 0.24 },
+      { "floor": 197300,  "ceiling": 250500, "baseTax": 38460.00,  "marginalRate": 0.32 },
+      { "floor": 250500,  "ceiling": 626350, "baseTax": 55484.00,  "marginalRate": 0.35 },
+      { "floor": 626350,  "ceiling": null,   "baseTax": 187031.50, "marginalRate": 0.37 }
+    ]
+  },
+  "validationCases": [],
+  "signature": null
+}

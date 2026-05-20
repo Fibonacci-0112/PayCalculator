@@ -1,0 +1,38 @@
+<Solution>
+  <Folder Name="/solution items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="README.md" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/PaycheckCalculator.Core/PaycheckCalculator.Core.csproj" />
+    <Project Path="src/PaycheckCalculator.Payroll/PaycheckCalculator.Payroll.csproj" />
+    <Project Path="src/PaycheckCalculator.TaxRules/PaycheckCalculator.TaxRules.csproj" />
+    <Project Path="src/PaycheckCalculator.Jurisdictions/PaycheckCalculator.Jurisdictions.csproj" />
+    <Project Path="src/PaycheckCalculator.Projections/PaycheckCalculator.Projections.csproj" />
+    <Project Path="src/PaycheckCalculator.SelfEmployment/PaycheckCalculator.SelfEmployment.csproj" />
+    <Project Path="src/PaycheckCalculator.Budgeting/PaycheckCalculator.Budgeting.csproj" />
+    <Project Path="src/PaycheckCalculator.Reports/PaycheckCalculator.Reports.csproj" />
+    <Project Path="src/PaycheckCalculator.ImportExport/PaycheckCalculator.ImportExport.csproj" />
+    <Project Path="src/PaycheckCalculator.Sync/PaycheckCalculator.Sync.csproj" />
+    <Project Path="src/PaycheckCalculator.SharedUi/PaycheckCalculator.SharedUi.csproj" />
+    <Project Path="src/PaycheckCalculator.Web/PaycheckCalculator.Web.csproj" />
+    <Project Path="src/PaycheckCalculator.Api/PaycheckCalculator.Api.csproj" />
+    <Project Path="src/PaycheckCalculator.RuleAdmin/PaycheckCalculator.RuleAdmin.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PaycheckCalculator.Tests.Golden/PaycheckCalculator.Tests.Golden.csproj" />
+    <Project Path="tests/PaycheckCalculator.Tests.TaxRules/PaycheckCalculator.Tests.TaxRules.csproj" />
+    <Project Path="tests/PaycheckCalculator.Tests.Jurisdictions/PaycheckCalculator.Tests.Jurisdictions.csproj" />
+    <Project Path="tests/PaycheckCalculator.Tests.Payroll/PaycheckCalculator.Tests.Payroll.csproj" />
+    <Project Path="tests/PaycheckCalculator.Tests.Projections/PaycheckCalculator.Tests.Projections.csproj" />
+    <Project Path="tests/PaycheckCalculator.Tests.SyncSecurity/PaycheckCalculator.Tests.SyncSecurity.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/TaxRuleImporter/TaxRuleImporter.csproj" />
+    <Project Path="tools/RulePackageSigner/RulePackageSigner.csproj" />
+    <Project Path="tools/JurisdictionDataImporter/JurisdictionDataImporter.csproj" />
+    <Project Path="tools/GoldenCaseRunner/GoldenCaseRunner.csproj" />
+  </Folder>
+</Solution>
