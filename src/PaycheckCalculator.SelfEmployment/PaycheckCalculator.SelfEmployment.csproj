@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.SelfEmployment</RootNamespace>
+    <Description>Schedule C and Schedule SE planning module: tax buckets, QBI estimate, half-SE-tax adjustment.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.TaxRules\PaycheckCalculator.TaxRules.csproj" />
+  </ItemGroup>
+</Project>

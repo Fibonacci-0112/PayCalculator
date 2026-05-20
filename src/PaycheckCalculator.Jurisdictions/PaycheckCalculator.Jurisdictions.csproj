@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.Jurisdictions</RootNamespace>
+    <Description>Address normalization, geocoding adapters, jurisdiction graph, and state/local tax engine.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.TaxRules\PaycheckCalculator.TaxRules.csproj" />
+  </ItemGroup>
+</Project>

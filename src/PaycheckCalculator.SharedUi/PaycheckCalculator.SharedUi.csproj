@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.SharedUi</RootNamespace>
+    <Description>Shared Razor components consumed by both the Blazor Web App and .NET MAUI Blazor Hybrid client.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Payroll\PaycheckCalculator.Payroll.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.TaxRules\PaycheckCalculator.TaxRules.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Projections\PaycheckCalculator.Projections.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Jurisdictions\PaycheckCalculator.Jurisdictions.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.SelfEmployment\PaycheckCalculator.SelfEmployment.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Budgeting\PaycheckCalculator.Budgeting.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Reports\PaycheckCalculator.Reports.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.ImportExport\PaycheckCalculator.ImportExport.csproj" />
+  </ItemGroup>
+</Project>

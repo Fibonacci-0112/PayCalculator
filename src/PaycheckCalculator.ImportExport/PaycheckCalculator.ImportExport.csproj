@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.ImportExport</RootNamespace>
+    <Description>CSV/JSON import and export for paychecks, YTD, projections, budgets, and accountant packet.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Reports\PaycheckCalculator.Reports.csproj" />
+  </ItemGroup>
+</Project>

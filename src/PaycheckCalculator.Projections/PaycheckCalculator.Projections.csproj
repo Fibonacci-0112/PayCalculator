@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PaycheckCalculator.Projections</RootNamespace>
+    <Description>Annual 1040-style projection engine and per-period optimization recommendations.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.TaxRules\PaycheckCalculator.TaxRules.csproj" />
+  </ItemGroup>
+</Project>
