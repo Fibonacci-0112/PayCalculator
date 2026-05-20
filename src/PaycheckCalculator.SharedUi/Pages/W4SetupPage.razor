@@ -1,0 +1,138 @@
+@page "/expert/w4"
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<h1>W-4 setup</h1>
+<p class="pc-subtitle">Guided 2020+ Form W-4 entry. Every field flows directly into the federal withholding calculator.</p>
+
+<ScenarioToolbar />
+
+<section class="pc-section">
+    <h2>Step 1 &mdash; Filing status</h2>
+    <div class="pc-grid">
+        @foreach (var status in Enum.GetValues<FilingStatus>())
+        {
+            <label class="pc-radio">
+                <input type="radio" name="filing" value="@status"
+                       checked="@(_filing == status)"
+                       @onchange="@(() => SetFiling(status))" />
+                <span>@FormatStatus(status)</span>
+            </label>
+        }
+    </div>
+</section>
+
+<section class="pc-section">
+    <h2>Step 2 &mdash; Multiple jobs or spouse works</h2>
+    <label class="pc-radio">
+        <input type="checkbox" @bind="_multipleJobs" @bind:after="ApplyW4" />
+        <span>Check this box if you (or your spouse) also work another job. The withholding tables will use the higher rate schedule.</span>
+    </label>
+</section>
+
+<section class="pc-section">
+    <h2>Step 3 &mdash; Dependents and credits</h2>
+    <div class="pc-grid">
+        <label>Child Tax Credit ($2,000 per qualifying child under 17)
+            <input type="number" step="0.01" @bind="_dependentsCredit" @bind:after="ApplyW4" />
+        </label>
+    </div>
+    <p class="pc-hint">Tip: $2,000 &times; number of qualifying children + $500 &times; other dependents.</p>
+</section>
+
+<section class="pc-section">
+    <h2>Step 4 &mdash; Other adjustments</h2>
+    <div class="pc-grid">
+        <label>4(a) Other income (annual)
+            <input type="number" step="0.01" @bind="_step4a" @bind:after="ApplyW4" />
+            <small>Interest, dividends, side income not subject to withholding.</small>
+        </label>
+        <label>4(b) Deductions (annual)
+            <input type="number" step="0.01" @bind="_step4b" @bind:after="ApplyW4" />
+            <small>Amount above the standard deduction you expect to itemize.</small>
+        </label>
+        <label>4(c) Extra withholding per paycheck
+            <input type="number" step="0.01" @bind="_step4c" @bind:after="ApplyW4" />
+            <small>Flat amount added on top of computed withholding.</small>
+        </label>
+    </div>
+</section>
+
+<section class="pc-section">
+    <h2>Live preview</h2>
+    @if (State.LatestResult is { } result)
+    {
+        var fit = result.Taxes.FirstOrDefault(t => t.TaxType == "FederalIncomeTax");
+        if (fit is not null)
+        {
+            <p>
+                Federal income tax this period: <strong>@fit.TaxAmount</strong>
+                using rule set <code>@fit.Explanation[0].RuleSetVersion</code>.
+            </p>
+        }
+    }
+    else
+    {
+        <p>Press <em>Recalculate</em> in the toolbar to preview withholding with these W-4 values.</p>
+    }
+</section>
+
+@code {
+    private FilingStatus _filing;
+    private bool _multipleJobs;
+    private decimal _dependentsCredit;
+    private decimal _step4a;
+    private decimal _step4b;
+    private decimal _step4c;
+
+    protected override void OnInitialized()
+    {
+        State.Changed += HandleChanged;
+        LoadFromState();
+    }
+
+    public void Dispose() => State.Changed -= HandleChanged;
+
+    private void HandleChanged()
+    {
+        LoadFromState();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void LoadFromState()
+    {
+        _filing = State.W4.FilingStatus;
+        _multipleJobs = State.W4.MultipleJobsOrSpouseWorks;
+        _dependentsCredit = State.W4.Step3DependentsCredit.Amount;
+        _step4a = State.W4.Step4aOtherIncomeAnnual.Amount;
+        _step4b = State.W4.Step4bDeductionsAnnual.Amount;
+        _step4c = State.W4.Step4cExtraWithholdingPerPeriod.Amount;
+    }
+
+    private void SetFiling(FilingStatus status)
+    {
+        _filing = status;
+        ApplyW4();
+    }
+
+    private void ApplyW4()
+    {
+        State.UpdateW4(new W4Profile(
+            _filing,
+            _multipleJobs,
+            Money.Usd(_dependentsCredit),
+            Money.Usd(_step4a),
+            Money.Usd(_step4b),
+            Money.Usd(_step4c)));
+    }
+
+    private static string FormatStatus(FilingStatus s) => s switch
+    {
+        FilingStatus.Single => "Single",
+        FilingStatus.MarriedFilingJointly => "Married filing jointly",
+        FilingStatus.MarriedFilingSeparately => "Married filing separately",
+        FilingStatus.HeadOfHousehold => "Head of household",
+        FilingStatus.QualifyingSurvivingSpouse => "Qualifying surviving spouse",
+        _ => s.ToString()
+    };
+}

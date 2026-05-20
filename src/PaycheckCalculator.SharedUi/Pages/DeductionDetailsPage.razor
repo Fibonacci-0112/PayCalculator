@@ -1,0 +1,122 @@
+@page "/expert/deductions"
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<h1>Deductions detail</h1>
+<p class="pc-subtitle">
+    Each deduction has a default tax treatment determined by the deduction classifier. Override the
+    treatment only for unusual employer plans &mdash; the audit trail records the override.
+</p>
+
+<ScenarioToolbar />
+
+<section class="pc-section">
+    <h2>Deductions this period</h2>
+    @if (State.Deductions.Count == 0)
+    {
+        <p>No deductions yet.</p>
+    }
+    else
+    {
+        <table class="pc-table">
+            <thead>
+                <tr>
+                    <th>Type</th><th>Amount type</th><th>Amount</th>
+                    <th>Federal</th><th>SS</th><th>Medicare</th><th>State</th><th>Local</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < State.Deductions.Count; i++)
+                {
+                    var index = i;
+                    var line = State.Deductions[i];
+                    var treatment = line.OverrideTreatment
+                        ?? PaycheckCalculator.Payroll.Deductions.DeductionClassifier.Classify(line.Type);
+                    <tr>
+                        <td>@line.Type</td>
+                        <td>@line.AmountType</td>
+                        <td class="pc-money">@FormatAmount(line)</td>
+                        <td>@treatment.FederalIncomeTax</td>
+                        <td>@treatment.SocialSecurity</td>
+                        <td>@treatment.Medicare</td>
+                        <td>@treatment.State</td>
+                        <td>@treatment.Local</td>
+                        <td><button class="pc-link" @onclick="@(() => State.RemoveDeduction(index))">Remove</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+<section class="pc-section">
+    <h2>Add a deduction</h2>
+    <div class="pc-grid">
+        <label>Type
+            <select @bind="_type">
+                @foreach (var t in Enum.GetValues<DeductionType>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </label>
+        <label>Amount type
+            <select @bind="_amountType">
+                @foreach (var t in Enum.GetValues<DeductionAmountType>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </label>
+        <label>Amount (or %)
+            <input type="number" step="0.01" @bind="_amount" />
+        </label>
+        <label>Annual limit (optional)
+            <input type="number" step="0.01" @bind="_annualLimit" />
+        </label>
+        <label>Label (optional)
+            <input @bind="_label" />
+        </label>
+    </div>
+    <div class="pc-actions">
+        <button class="pc-primary" @onclick="Add">Add deduction</button>
+    </div>
+    <p class="pc-hint">
+        Default tax treatment for <strong>@_type</strong>:
+        @{
+            var tx = PaycheckCalculator.Payroll.Deductions.DeductionClassifier.Classify(_type);
+        }
+        Federal=@tx.FederalIncomeTax, SS=@tx.SocialSecurity, Medicare=@tx.Medicare,
+        State=@tx.State, Local=@tx.Local.
+    </p>
+</section>
+
+@code {
+    private DeductionType _type = DeductionType.Traditional401k;
+    private DeductionAmountType _amountType = DeductionAmountType.PercentOfGross;
+    private decimal _amount = 5m;
+    private decimal? _annualLimit;
+    private string? _label;
+
+    protected override void OnInitialized() => State.Changed += HandleChanged;
+    public void Dispose() => State.Changed -= HandleChanged;
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    private void Add()
+    {
+        if (_amount <= 0m) return;
+        Money? limit = _annualLimit is decimal v && v > 0m ? Money.Usd(v) : null;
+        State.AddDeduction(new DeductionInput(_type, _amountType, _amount, limit, null, _label));
+        _amount = 0m;
+        _annualLimit = null;
+        _label = null;
+    }
+
+    private static string FormatAmount(DeductionInput line) => line.AmountType switch
+    {
+        DeductionAmountType.PercentOfGross => $"{line.Amount:0.##}% of gross",
+        DeductionAmountType.PercentOfNet => $"{line.Amount:0.##}% of net",
+        _ => Money.Usd(line.Amount).ToString()
+    };
+}

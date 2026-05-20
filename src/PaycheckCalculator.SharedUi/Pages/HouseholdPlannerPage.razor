@@ -1,0 +1,130 @@
+@page "/expert/household"
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<h1>Household planner</h1>
+<p class="pc-subtitle">
+    The household profile combines spouse income, side income, investment income, and credits the
+    projection engine uses when estimating AGI, taxable income, and refund/due.
+</p>
+
+<ScenarioToolbar />
+
+<section class="pc-section">
+    <h2>People</h2>
+    <div class="pc-grid">
+        <label>Dependent children under 17
+            <input type="number" step="1" min="0" @bind="_kids" @bind:after="Apply" />
+        </label>
+        <label>Other dependents
+            <input type="number" step="1" min="0" @bind="_otherDependents" @bind:after="Apply" />
+        </label>
+    </div>
+</section>
+
+<section class="pc-section">
+    <h2>Other annual income</h2>
+    <div class="pc-grid">
+        <label>Spouse / other household wages
+            <input type="number" step="0.01" @bind="_otherWages" @bind:after="Apply" />
+        </label>
+        <label>Taxable interest
+            <input type="number" step="0.01" @bind="_interest" @bind:after="Apply" />
+        </label>
+        <label>Dividends
+            <input type="number" step="0.01" @bind="_dividends" @bind:after="Apply" />
+        </label>
+        <label>Capital gains
+            <input type="number" step="0.01" @bind="_capitalGains" @bind:after="Apply" />
+        </label>
+        <label>Retirement income
+            <input type="number" step="0.01" @bind="_retirement" @bind:after="Apply" />
+        </label>
+        <label>Unemployment income
+            <input type="number" step="0.01" @bind="_unemployment" @bind:after="Apply" />
+        </label>
+    </div>
+</section>
+
+<section class="pc-section">
+    <h2>Deductions and prior payments</h2>
+    <div class="pc-grid">
+        <label>Estimated itemized deductions (annual)
+            <input type="number" step="0.01" @bind="_itemized" @bind:after="Apply" />
+            <small>The projection picks the larger of standard vs. itemized for you.</small>
+        </label>
+        <label>Estimated payments already made YTD
+            <input type="number" step="0.01" @bind="_estimatedPaid" @bind:after="Apply" />
+        </label>
+        <label>Prior-year total tax liability
+            <input type="number" step="0.01" @bind="_priorTax" @bind:after="Apply" />
+            <small>Used for the prior-year safe-harbor comparison.</small>
+        </label>
+        <label>Prior-year federal withholding
+            <input type="number" step="0.01" @bind="_priorWithheld" @bind:after="Apply" />
+        </label>
+    </div>
+</section>
+
+@code {
+    private int _kids;
+    private int _otherDependents;
+    private decimal _otherWages;
+    private decimal _interest;
+    private decimal _dividends;
+    private decimal _capitalGains;
+    private decimal _retirement;
+    private decimal _unemployment;
+    private decimal _itemized;
+    private decimal _estimatedPaid;
+    private decimal _priorTax;
+    private decimal _priorWithheld;
+
+    protected override void OnInitialized()
+    {
+        State.Changed += HandleChanged;
+        Load();
+    }
+
+    public void Dispose() => State.Changed -= HandleChanged;
+
+    private void HandleChanged()
+    {
+        Load();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void Load()
+    {
+        var h = State.Household;
+        _kids = h.DependentChildrenUnder17;
+        _otherDependents = h.OtherDependents;
+        _otherWages = h.OtherHouseholdWagesAnnual.Amount;
+        _interest = h.OtherTaxableInterestAnnual.Amount;
+        _dividends = h.OtherDividendsAnnual.Amount;
+        _capitalGains = h.OtherCapitalGainsAnnual.Amount;
+        _retirement = h.RetirementIncomeAnnual.Amount;
+        _unemployment = h.UnemploymentIncomeAnnual.Amount;
+        _itemized = h.EstimatedItemizedDeductionsAnnual.Amount;
+        _estimatedPaid = h.EstimatedPaymentsMadeYtd.Amount;
+        _priorTax = h.PriorYearTotalTaxLiability.Amount;
+        _priorWithheld = h.PriorYearFederalWithholding.Amount;
+    }
+
+    private void Apply()
+    {
+        State.UpdateHousehold(new HouseholdTaxProfile(
+            State.Household.FilingStatus,
+            _kids, _otherDependents,
+            Money.Usd(_itemized),
+            Money.Usd(_priorTax),
+            Money.Usd(_priorWithheld),
+            Money.Usd(_otherWages),
+            Money.Usd(_interest),
+            Money.Usd(_dividends),
+            Money.Usd(_capitalGains),
+            Money.Usd(_retirement),
+            Money.Usd(_unemployment),
+            Money.Usd(_estimatedPaid)));
+    }
+}

@@ -1,0 +1,78 @@
+@page "/expert/self-employment"
+@inject ScheduleSeCalculator ScheduleSe
+@inject ScenarioEditorState State
+
+<h1>Self-employment planner</h1>
+<p class="pc-subtitle">
+    Schedule C profit, Schedule SE tax (Social Security + Medicare portions), the half-SE-tax
+    adjustment, a Form 8995-style QBI estimate, and quarterly tax-bucket reserve recommendations.
+</p>
+
+<section class="pc-section">
+    <h2>Business income and expenses</h2>
+    <div class="pc-grid">
+        <label>Gross business income (annual)
+            <input type="number" step="0.01" @bind="_gross" @bind:after="Recalculate" />
+        </label>
+        <label>Business expenses (annual)
+            <input type="number" step="0.01" @bind="_expenses" @bind:after="Recalculate" />
+        </label>
+    </div>
+</section>
+
+<section class="pc-section">
+    <h2>Tax bucket percentages</h2>
+    <p class="pc-hint">
+        Configurable reserves applied to each dollar of net profit. Quarterly recommendation = net profit &times; (federal + SE + state + local).
+    </p>
+    <div class="pc-grid">
+        <label>Federal bucket (%) <input type="number" step="0.5" @bind="_federalPct" @bind:after="Recalculate" /></label>
+        <label>SE tax bucket (%) <input type="number" step="0.5" @bind="_sePct" @bind:after="Recalculate" /></label>
+        <label>State bucket (%) <input type="number" step="0.5" @bind="_statePct" @bind:after="Recalculate" /></label>
+        <label>Local bucket (%) <input type="number" step="0.5" @bind="_localPct" @bind:after="Recalculate" /></label>
+    </div>
+</section>
+
+@if (_result is { } r)
+{
+    <section class="pc-section">
+        <h2>Schedule C / SE result</h2>
+        <table class="pc-table">
+            <tbody>
+                <tr><th>Net profit (Schedule C)</th><td class="pc-money">@r.NetProfit</td></tr>
+                <tr><th>SE tax base (net profit &times; 92.35%)</th><td class="pc-money">@r.SeTaxBase</td></tr>
+                <tr><th>Social Security portion (12.4%)</th><td class="pc-money">@r.SocialSecurityPortion</td></tr>
+                <tr><th>Medicare portion (2.9%)</th><td class="pc-money">@r.MedicarePortion</td></tr>
+                <tr><th>Total SE tax (Schedule SE)</th><td class="pc-money">@r.TotalSeTax</td></tr>
+                <tr><th>Half SE tax adjustment (Schedule 1)</th><td class="pc-money">@r.HalfSeTaxAdjustment</td></tr>
+                <tr><th>QBI estimate (Form 8995, simplified)</th><td class="pc-money">@r.QbiEstimate</td></tr>
+                <tr class="pc-net"><th>Quarterly reserve recommendation</th><td class="pc-money">@QuarterlyReserve</td></tr>
+            </tbody>
+        </table>
+    </section>
+}
+
+@code {
+    private decimal _gross = 60_000m;
+    private decimal _expenses = 12_000m;
+    private decimal _federalPct = 15m;
+    private decimal _sePct = 15.3m;
+    private decimal _statePct = 5m;
+    private decimal _localPct = 0m;
+    private SelfEmploymentResult? _result;
+
+    protected override void OnInitialized() => Recalculate();
+
+    private void Recalculate()
+    {
+        _result = ScheduleSe.Calculate(
+            new ScheduleCInput(Money.Usd(_gross), Money.Usd(_expenses)),
+            State.RoundingPolicy);
+    }
+
+    private Money QuarterlyReserve =>
+        _result is null
+            ? Money.Zero
+            : Money.Usd(State.RoundingPolicy.Round(
+                _result.NetProfit.Amount * (_federalPct + _sePct + _statePct + _localPct) / 100m / 4m));
+}

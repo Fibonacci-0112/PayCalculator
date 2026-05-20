@@ -1,0 +1,90 @@
+@page "/expert/compare"
+@implements IDisposable
+@inject ScenarioEditorState State
+@inject IPaycheckScenarioStore Store
+
+<h1>Scenario comparison</h1>
+<p class="pc-subtitle">
+    Save snapshots of the current scenario and compare them side by side. Spec use cases: new job
+    offer, raise, promotion, moving states, different filing status, increased 401(k), bonus method.
+</p>
+
+<ScenarioToolbar />
+
+<section class="pc-section">
+    <h2>Save current scenario</h2>
+    <div class="pc-grid">
+        <label>Snapshot name
+            <input @bind="_name" placeholder="e.g. Bumped 401(k) to 10%" />
+        </label>
+    </div>
+    <div class="pc-actions">
+        <button class="pc-primary" @onclick="SaveCurrent" disabled="@(State.LatestResult is null)">Save snapshot</button>
+        <button class="pc-secondary" @onclick="RefreshList">Refresh list</button>
+    </div>
+</section>
+
+<section class="pc-section">
+    <h2>Saved snapshots</h2>
+    @if (_saved.Count == 0)
+    {
+        <p>No saved snapshots yet.</p>
+    }
+    else
+    {
+        <table class="pc-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th><th>Gross</th><th>Net</th><th>Federal tax</th><th>FICA</th>
+                    <th>Projected refund/due</th><th>vs. baseline net</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in _saved)
+                {
+                    var deltaNet = r.NetPay - _saved[0].NetPay;
+                    <tr>
+                        <td>@r.ScenarioId.ToString()[..8]</td>
+                        <td class="pc-money">@r.GrossPay</td>
+                        <td class="pc-money">@r.NetPay</td>
+                        <td class="pc-money">@r.TotalFederalTax</td>
+                        <td class="pc-money">@r.TotalFica</td>
+                        <td class="pc-money">@r.Projection.ProjectedRefundOrAmountDue</td>
+                        <td class="pc-money @(deltaNet.Amount >= 0 ? "pc-positive" : "pc-negative")">@deltaNet</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="pc-hint">The first row is the baseline. Delta column shows net-pay change vs. baseline.</p>
+    }
+</section>
+
+@code {
+    private string _name = "";
+    private List<CalculationResult> _saved = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += HandleChanged;
+        await RefreshList();
+    }
+
+    public void Dispose() => State.Changed -= HandleChanged;
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task SaveCurrent()
+    {
+        if (State.LatestResult is null) return;
+        await Store.SaveAsync(State.LatestResult, string.IsNullOrWhiteSpace(_name)
+            ? $"Snapshot {DateTime.Now:HH:mm:ss}"
+            : _name);
+        _name = "";
+        await RefreshList();
+    }
+
+    private async Task RefreshList()
+    {
+        _saved = (await Store.ListAsync()).ToList();
+        StateHasChanged();
+    }
+}

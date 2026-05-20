@@ -1,0 +1,110 @@
+@page "/expert/earnings"
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<h1>Earnings detail</h1>
+<p class="pc-subtitle">
+    Itemize regular, overtime, holiday, PTO, tips, bonuses, commissions, reimbursements, and imputed income.
+    Supplemental categories are routed through the flat-rate calculator automatically.
+</p>
+
+<ScenarioToolbar />
+
+<section class="pc-section">
+    <h2>Earnings this period</h2>
+    @if (State.Earnings.Count == 0)
+    {
+        <p>No earnings yet. Use the form below to add one.</p>
+    }
+    else
+    {
+        <table class="pc-table">
+            <thead>
+                <tr>
+                    <th>Type</th><th>Amount</th><th>Hours</th><th>Rate</th>
+                    <th>Supplemental?</th><th>Treatment</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < State.Earnings.Count; i++)
+                {
+                    var index = i;
+                    var line = State.Earnings[i];
+                    <tr>
+                        <td>@line.Type</td>
+                        <td class="pc-money">@line.Amount</td>
+                        <td>@(line.Hours?.ToString("0.##") ?? "&mdash;")</td>
+                        <td>@(line.Rate?.ToString() ?? "&mdash;")</td>
+                        <td>@(line.IsSupplemental ? "Yes" : "No")</td>
+                        <td><code>@line.TaxTreatment</code></td>
+                        <td>
+                            <button class="pc-link" @onclick="@(() => State.RemoveEarning(index))">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+<section class="pc-section">
+    <h2>Add an earning line</h2>
+    <div class="pc-grid">
+        <label>Type
+            <select @bind="_type">
+                @foreach (var t in Enum.GetValues<EarningType>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </label>
+        <label>Amount
+            <input type="number" step="0.01" @bind="_amount" />
+        </label>
+        <label>Hours (optional)
+            <input type="number" step="0.01" @bind="_hours" />
+        </label>
+        <label>Rate per hour (optional)
+            <input type="number" step="0.01" @bind="_rate" />
+        </label>
+        <label>Tax treatment
+            <select @bind="_treatment">
+                @foreach (var t in Enum.GetValues<TaxTreatmentCode>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </label>
+        <label class="pc-radio">
+            <input type="checkbox" @bind="_supplemental" />
+            <span>Force supplemental wage handling</span>
+        </label>
+    </div>
+    <div class="pc-actions">
+        <button class="pc-primary" @onclick="Add">Add earning</button>
+    </div>
+</section>
+
+@code {
+    private EarningType _type = EarningType.RegularSalary;
+    private decimal _amount;
+    private decimal? _hours;
+    private decimal? _rate;
+    private bool _supplemental;
+    private TaxTreatmentCode _treatment = TaxTreatmentCode.FullyTaxable;
+
+    protected override void OnInitialized() => State.Changed += HandleChanged;
+    public void Dispose() => State.Changed -= HandleChanged;
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    private void Add()
+    {
+        if (_amount <= 0m && _hours is null) return;
+        Money? rate = _rate.HasValue ? Money.Usd(_rate.Value) : null;
+        State.AddEarning(new EarningLineInput(_type, Money.Usd(_amount), _hours, rate, _supplemental, _treatment));
+        _amount = 0m;
+        _hours = null;
+        _rate = null;
+        _supplemental = false;
+    }
+}

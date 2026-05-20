@@ -1,0 +1,79 @@
+@page "/expert/optimizer"
+@implements IDisposable
+@inject ScenarioEditorState State
+@inject PaycheckCalculator.Projections.Optimization.OptimizationEngine Optimizer
+
+<h1>Per-period optimizer</h1>
+<p class="pc-subtitle">
+    Pick a goal and a target. The optimizer reads the current projection and recommends extra
+    withholding per period, a quarterly estimated payment, or both.
+</p>
+
+<ScenarioToolbar />
+
+<section class="pc-section">
+    <h2>Goal</h2>
+    <div class="pc-grid">
+        <label>Goal
+            <select @bind="_goal">
+                @foreach (var g in Enum.GetValues<PaycheckCalculator.Projections.Optimization.OptimizationGoal>())
+                {
+                    <option value="@g">@g</option>
+                }
+            </select>
+        </label>
+        <label>Target refund or amount due
+            <input type="number" step="0.01" @bind="_target" />
+            <small>Positive = target refund; negative = OK to owe up to this amount.</small>
+        </label>
+        <label>Remaining pay periods this year
+            <input type="number" step="1" @bind="_remaining" />
+        </label>
+    </div>
+    <div class="pc-actions">
+        <button class="pc-primary" @onclick="Suggest" disabled="@(State.LatestResult is null)">Suggest</button>
+    </div>
+</section>
+
+@if (_suggestion is { } s)
+{
+    <section class="pc-section">
+        <h2>Recommendation</h2>
+        <p>@s.RecommendationText</p>
+        <table class="pc-table">
+            <tbody>
+                <tr><th>Extra federal withholding per period</th><td class="pc-money">@FormatMoney(s.ExtraFederalWithholdingPerPeriod)</td></tr>
+                <tr><th>Quarterly estimated payment</th><td class="pc-money">@FormatMoney(s.QuarterlyEstimatedPayment)</td></tr>
+                <tr><th>Projected refund/due after change</th><td class="pc-money">@s.ProjectedRefundOrDueAfterChange</td></tr>
+                <tr><th>Confidence</th><td>@s.Confidence</td></tr>
+            </tbody>
+        </table>
+        <ul>
+            @foreach (var note in s.Notes)
+            {
+                <li>@note</li>
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    private PaycheckCalculator.Projections.Optimization.OptimizationGoal _goal =
+        PaycheckCalculator.Projections.Optimization.OptimizationGoal.BreakEvenAtTaxTime;
+    private decimal _target = 0m;
+    private int _remaining = 12;
+    private PaycheckCalculator.Projections.Optimization.OptimizationSuggestion? _suggestion;
+
+    protected override void OnInitialized() => State.Changed += HandleChanged;
+    public void Dispose() => State.Changed -= HandleChanged;
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    private void Suggest()
+    {
+        if (State.LatestResult is null) return;
+        _suggestion = Optimizer.Suggest(new PaycheckCalculator.Projections.Optimization.OptimizationRequest(
+            _goal, Money.Usd(_target), _remaining, State.LatestResult.Projection));
+    }
+
+    private static string FormatMoney(Money? m) => m is null ? "—" : m.Value.ToString();
+}

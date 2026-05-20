@@ -1,0 +1,103 @@
+@page "/expert/audit"
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<h1>Rule / audit details</h1>
+<p class="pc-subtitle">
+    Every calculated number must be explainable. This page shows the formula, the raw inputs, the
+    rule-set version, the rounding policy, and the source forms behind each tax and deduction line.
+</p>
+
+<ScenarioToolbar />
+
+@if (State.LatestResult is { } result)
+{
+    <section class="pc-section">
+        <h2>Audit header</h2>
+        <table class="pc-table">
+            <tbody>
+                <tr><th>Engine version</th><td><code>@result.Audit.EngineVersion</code></td></tr>
+                <tr><th>Tax year</th><td>@result.Audit.TaxYear</td></tr>
+                <tr><th>Pay frequency</th><td>@result.Audit.PayFrequency (@result.Audit.AnnualPayPeriods periods/yr)</td></tr>
+                <tr><th>Rounding policy</th><td><code>@result.Audit.RoundingPolicy.Name</code></td></tr>
+                <tr><th>Generated at (UTC)</th><td>@result.Audit.GeneratedAt</td></tr>
+                <tr><th>Rule-set versions used</th>
+                    <td>
+                        <ul>
+                            @foreach (var v in result.Audit.RuleSetVersions)
+                            {
+                                <li><code>@v</code></li>
+                            }
+                        </ul>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="pc-section">
+        <h2>Tax lines</h2>
+        @foreach (var tax in result.Taxes)
+        {
+            <details class="pc-audit-card">
+                <summary>
+                    <strong>@tax.TaxType</strong> &mdash; @tax.TaxAmount
+                    <span class="pc-pill">@tax.SupportLevel</span>
+                </summary>
+                <table class="pc-table">
+                    <tbody>
+                        <tr><th>Authority</th><td>@tax.Authority.DisplayName (@tax.Authority.AuthorityType)</td></tr>
+                        <tr><th>Jurisdiction</th><td>@tax.Authority.JurisdictionCode</td></tr>
+                        <tr><th>Taxable wages</th><td class="pc-money">@tax.TaxableWages</td></tr>
+                        <tr><th>Formula ID</th><td><code>@tax.FormulaId</code></td></tr>
+                    </tbody>
+                </table>
+                @foreach (var line in tax.Explanation)
+                {
+                    <div class="pc-explain-card">
+                        <p><strong>@line.Label</strong> &mdash; @line.Amount</p>
+                        <p class="pc-formula"><code>@line.FormulaText</code></p>
+                        <table class="pc-table pc-explain">
+                            <tbody>
+                                @foreach (var input in line.Inputs)
+                                {
+                                    <tr><th>@input.Key</th><td>@input.Value</td></tr>
+                                }
+                                <tr><th>Rule set</th><td><code>@line.RuleSetVersion</code></td></tr>
+                                <tr><th>Rounding</th><td><code>@line.RoundingMethod</code></td></tr>
+                                <tr><th>Source forms</th><td>@string.Join(", ", line.SourceForms)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </details>
+        }
+    </section>
+
+    <section class="pc-section">
+        <h2>Diagnostics and warnings</h2>
+        @if (result.Warnings.Count == 0)
+        {
+            <p>No diagnostics emitted for this calculation.</p>
+        }
+        else
+        {
+            <ul class="pc-warnings">
+                @foreach (var w in result.Warnings)
+                {
+                    <li><strong>@w.Category</strong> (@w.Severity) &mdash; @w.Message</li>
+                }
+            </ul>
+        }
+    </section>
+}
+else
+{
+    <p>Recalculate from the toolbar to view the audit trail.</p>
+}
+
+@code {
+    protected override void OnInitialized() => State.Changed += HandleChanged;
+    public void Dispose() => State.Changed -= HandleChanged;
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+}

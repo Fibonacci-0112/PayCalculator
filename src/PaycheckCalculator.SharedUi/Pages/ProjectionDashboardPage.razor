@@ -1,0 +1,71 @@
+@page "/expert/projection"
+@implements IDisposable
+@inject ScenarioEditorState State
+
+<h1>Annual projection dashboard</h1>
+<p class="pc-subtitle">
+    Paycheck-to-Tax-Return Bridge: maps the current paycheck plus household activity to a projected
+    Form 1040 (AGI, taxable income, federal tax, withholding, refund or amount due).
+</p>
+
+<ScenarioToolbar />
+
+@if (State.LatestResult is { } result)
+{
+    var p = result.Projection;
+    var refundColor = p.ProjectedRefundOrAmountDue.Amount >= 0m ? "pc-positive" : "pc-negative";
+    <section class="pc-section">
+        <h2>This paycheck added</h2>
+        <ul class="pc-bridge">
+            <li>+ <strong>@result.GrossPay</strong> wages</li>
+            <li>+ <strong>@result.TotalFederalTax</strong> federal withholding</li>
+            <li>+ <strong>@result.TotalFica</strong> FICA</li>
+            <li>+ <strong>@result.TotalPreTaxDeductions</strong> pre-tax deductions</li>
+            <li>= <strong>@result.NetPay</strong> net pay</li>
+        </ul>
+    </section>
+
+    <section class="pc-section">
+        <h2>Projected 2026 return</h2>
+        <table class="pc-table">
+            <tbody>
+                <tr><th>Projected gross wages</th><td class="pc-money">@p.ProjectedGrossWages</td></tr>
+                <tr><th>Projected adjusted gross income</th><td class="pc-money">@p.ProjectedAdjustedGrossIncome</td></tr>
+                <tr><th>Projected taxable income</th><td class="pc-money">@p.ProjectedTaxableIncome</td></tr>
+                <tr><th>Projected federal credits</th><td class="pc-money">@p.ProjectedFederalCredits</td></tr>
+                <tr><th>Projected federal tax</th><td class="pc-money">@p.ProjectedFederalTax</td></tr>
+                <tr><th>Projected withholding</th><td class="pc-money">@p.ProjectedFederalWithholding</td></tr>
+                <tr><th>Estimated payments YTD</th><td class="pc-money">@p.ProjectedEstimatedPayments</td></tr>
+                <tr class="pc-net @refundColor">
+                    <th>Projected refund or amount due</th>
+                    <td class="pc-money">@p.ProjectedRefundOrAmountDue</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="pc-section">
+        <h2>Recommendations and confidence</h2>
+        <p>
+            Recommended extra federal withholding per period:
+            <strong>@p.RecommendedExtraFederalWithholdingPerPeriod</strong>
+        </p>
+        <p>Confidence: <strong>@p.Confidence</strong></p>
+        <ul>
+            @foreach (var note in p.AssumptionNotes)
+            {
+                <li>@note</li>
+            }
+        </ul>
+    </section>
+}
+else
+{
+    <p>Recalculate from the toolbar to populate the projection.</p>
+}
+
+@code {
+    protected override void OnInitialized() => State.Changed += HandleChanged;
+    public void Dispose() => State.Changed -= HandleChanged;
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+}
