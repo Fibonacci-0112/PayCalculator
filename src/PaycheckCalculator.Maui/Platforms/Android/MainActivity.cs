@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
+using Android.Views;
 
 namespace PaycheckCalculator.Maui;
 
@@ -15,7 +16,7 @@ public class MainActivity : MauiAppCompatActivity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         // Block screenshots and recents-thumbnail capture of paystub data when the app is backgrounded.
-        Window?.AddFlags(Android.Views.WindowManagerFlags.Secure);
+        Window?.AddFlags(WindowManagerFlags.Secure);
         base.OnCreate(savedInstanceState);
     }
 }
