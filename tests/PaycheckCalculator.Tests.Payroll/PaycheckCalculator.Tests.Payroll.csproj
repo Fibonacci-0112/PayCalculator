@@ -16,5 +16,6 @@
     <ProjectReference Include="..\..\src\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
     <ProjectReference Include="..\..\src\PaycheckCalculator.Payroll\PaycheckCalculator.Payroll.csproj" />
     <ProjectReference Include="..\..\src\PaycheckCalculator.TaxRules\PaycheckCalculator.TaxRules.csproj" />
+    <ProjectReference Include="..\..\src\PaycheckCalculator.SharedUi\PaycheckCalculator.SharedUi.csproj" />
   </ItemGroup>
 </Project>
