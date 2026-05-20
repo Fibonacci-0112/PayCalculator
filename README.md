@@ -1,1 +1,1 @@
-# PayCalc
+# PayCalculator
