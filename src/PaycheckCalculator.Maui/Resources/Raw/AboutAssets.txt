@@ -1,0 +1,8 @@
+Any raw assets you want to be deployed with the application can be placed in this directory.
+
+These files are deployed with the application and you can reference them by name from any platform.
+For example, an image at `Resources/Raw/logo.png` is referenced as `logo.png`.
+
+Files in `Resources/Raw` are read-only at runtime. Use FileSystem.AppDataDirectory for read/write data.
+
+For more information see https://learn.microsoft.com/dotnet/maui/fundamentals/file-system-helpers.
