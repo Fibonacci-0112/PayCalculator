@@ -1,0 +1,2 @@
+Place vector images (.svg) and rasters used by the MAUI shell here. They are referenced by file name
+(without extension) and resized per platform at build time.

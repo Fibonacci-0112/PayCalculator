@@ -2,7 +2,7 @@
 
 Cross-platform paycheck, tax-planning, and payday-budgeting application built per **SPEC-1-Paycheck-Tax-Planning-App**.
 
-The first tax-rule target is **tax year 2026**. The solution is a multi-project .NET solution using the new `.slnx` (XML) format. Calculation logic lives in shared .NET class libraries; Razor components live in a shared UI library consumed by both a Blazor Web App and (via the same render path) a future .NET MAUI Blazor Hybrid client.
+The first tax-rule target is **tax year 2026**. The solution is a multi-project .NET solution using the new `.slnx` (XML) format. Calculation logic lives in shared .NET class libraries; Razor components live in a shared UI library consumed by both a Blazor Web App and a .NET MAUI Blazor Hybrid client.
 
 > Estimates only. The app provides planning assistance, not professional tax advice.
 
@@ -26,6 +26,7 @@ global.json                      # SDK pin
   PaycheckCalculator.ImportExport    # CSV import/export
   PaycheckCalculator.Sync            # E2EE envelope encrypt/decrypt (AES-GCM)
   PaycheckCalculator.SharedUi        # Razor class library (components used by Web + MAUI)
+  PaycheckCalculator.Maui            # .NET MAUI Blazor Hybrid client (Android, iOS, Windows, macOS)
   PaycheckCalculator.Web             # Blazor Web App host
   PaycheckCalculator.Api             # ASP.NET Core minimal API: sync, rule download, devices
   PaycheckCalculator.RuleAdmin       # Rule authoring/import/review/sign/publish workflow
@@ -48,13 +49,28 @@ global.json                      # SDK pin
   2026/federal/federal-2026-pub15t.json  # Canonical 2026 federal rule data
 ```
 
-The MAUI client (`PaycheckCalculator.Maui`) is intentionally not in the `.slnx` because it requires the `maui` workload (~2 GB) and platform SDKs. The `SharedUi` Razor components are designed to be consumed by it unmodified — add the project locally with:
+The MAUI client (`src/PaycheckCalculator.Maui/`) is deliberately *not* in `PaycheckCalculator.slnx` so the rest of the solution restores and tests on a vanilla .NET SDK install (CI on `ubuntu-latest` does not have the MAUI workload). To build the MAUI head locally:
 
 ```bash
 dotnet workload install maui
-dotnet new maui-blazor -n PaycheckCalculator.Maui -o src/PaycheckCalculator.Maui
-# Reference src/PaycheckCalculator.SharedUi, then add to the .slnx <Folder Name="/src/">.
+dotnet build src/PaycheckCalculator.Maui/PaycheckCalculator.Maui.csproj -f net8.0-android
+# or -f net8.0-ios / net8.0-maccatalyst / net8.0-windows10.0.19041.0 on the appropriate host OS
 ```
+
+Project references inside the MAUI csproj pull in `PaycheckCalculator.SharedUi`, `PaycheckCalculator.Sync`, and `PaycheckCalculator.ImportExport` transitively, so a single build command compiles everything the MAUI head needs.
+
+What the MAUI head provides on top of `SharedUi`:
+
+- `MauiProgram.cs` wires `AddPaycheckCalculatorCore()` (the same DI extension the Blazor Web App uses), so calculation, optimization, projection, scenario store, jurisdiction resolver, and rule registry come from the shared library.
+- `BlazorWebView` in `MainPage.xaml` hosts the shared `Routes` component, which mounts every page under `src/PaycheckCalculator.SharedUi/Pages` (Simple Mode + Expert Mode screens) without modification.
+- Platform-specific services satisfy the privacy-first contracts in `PaycheckCalculator.Sync.Platform`:
+  - `MauiSecureStorage` → Keychain / KeyStore / DPAPI via `SecureStorage.Default`.
+  - `MauiLocalDataPathProvider` → `FileSystem.AppDataDirectory` for the encrypted SQLite store.
+  - `MauiBiometricUnlock` → stub that reports `IsAvailable=false` until a vetted biometric plugin is wired in.
+  - `MauiAppLifecycleEvents` → bridges MAUI `Window` lifecycle to vault-lock / YTD-flush hooks.
+- Android `MainActivity` sets `FLAG_SECURE` so paystub data isn't captured in OS screenshots or the recents thumbnail.
+- iOS `Info.plist` declares `NSFaceIDUsageDescription` for biometric vault unlock.
+- macCatalyst `Entitlements.plist` enables App Sandbox so the encrypted store lives inside the per-app container.
 
 ## Requirements coverage
 

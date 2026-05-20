@@ -1,0 +1,46 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: "OpenSansRegular", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background-color: #f6f7fb;
+    color: #1f2937;
+    -webkit-font-smoothing: antialiased;
+}
+
+#app {
+    height: 100%;
+    overflow: auto;
+}
+
+#blazor-error-ui {
+    background: #ffe1e1;
+    border-top: 1px solid #d62828;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+#blazor-error-ui .reload {
+    color: #003566;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+/* MAUI safe area on iOS notch / Android gesture bar */
+.pc-app {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}

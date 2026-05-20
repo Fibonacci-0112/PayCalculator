@@ -21,5 +21,6 @@
     <ProjectReference Include="..\PaycheckCalculator.Budgeting\PaycheckCalculator.Budgeting.csproj" />
     <ProjectReference Include="..\PaycheckCalculator.Reports\PaycheckCalculator.Reports.csproj" />
     <ProjectReference Include="..\PaycheckCalculator.ImportExport\PaycheckCalculator.ImportExport.csproj" />
+    <ProjectReference Include="..\PaycheckCalculator.Sync\PaycheckCalculator.Sync.csproj" />
   </ItemGroup>
 </Project>

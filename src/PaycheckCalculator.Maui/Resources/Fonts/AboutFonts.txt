@@ -1,0 +1,9 @@
+Place TrueType/OpenType font files used by the MAUI shell here.
+
+MauiProgram.cs registers `OpenSans-Regular.ttf` (alias `OpenSansRegular`) and `OpenSans-Semibold.ttf`
+(alias `OpenSansSemibold`). Drop the matching `.ttf` files into this folder. They are bundled at build
+time via the `<MauiFont Include="Resources\Fonts\*" />` glob in the csproj.
+
+OpenSans is released under the Apache License 2.0:
+  https://fonts.google.com/specimen/Open+Sans
+  https://github.com/googlefonts/opensans
