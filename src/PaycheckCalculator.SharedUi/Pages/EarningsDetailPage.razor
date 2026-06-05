@@ -31,12 +31,12 @@
                     var index = i;
                     var line = State.Earnings[i];
                     <tr>
-                        <td>@line.Type</td>
+                        <td>@line.Type.ToDisplayName()</td>
                         <td class="pc-money">@line.Amount</td>
                         <td>@(line.Hours?.ToString("0.##") ?? "&mdash;")</td>
                         <td>@(line.Rate?.ToString() ?? "&mdash;")</td>
                         <td>@(line.IsSupplemental ? "Yes" : "No")</td>
-                        <td><code>@line.TaxTreatment</code></td>
+                        <td><code>@line.TaxTreatment.ToDisplayName()</code></td>
                         <td>
                             <button class="pc-link" @onclick="@(() => State.RemoveEarning(index))">Remove</button>
                         </td>
@@ -54,7 +54,7 @@
             <select @bind="_type">
                 @foreach (var t in Enum.GetValues<EarningType>())
                 {
-                    <option value="@t">@t</option>
+                    <option value="@t">@t.ToDisplayName()</option>
                 }
             </select>
         </label>
@@ -71,7 +71,7 @@
             <select @bind="_treatment">
                 @foreach (var t in Enum.GetValues<TaxTreatmentCode>())
                 {
-                    <option value="@t">@t</option>
+                    <option value="@t">@t.ToDisplayName()</option>
                 }
             </select>
         </label>

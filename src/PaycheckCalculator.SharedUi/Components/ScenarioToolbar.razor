@@ -6,7 +6,7 @@
         <select @bind="State.PayFrequency">
             @foreach (var f in Enum.GetValues<PayFrequency>())
             {
-                <option value="@f">@f</option>
+                <option value="@f">@f.ToDisplayName()</option>
             }
         </select>
     </label>
@@ -14,7 +14,7 @@
         <select @bind="State.WorkerType">
             @foreach (var w in Enum.GetValues<WorkerType>())
             {
-                <option value="@w">@w</option>
+                <option value="@w">@w.ToDisplayName()</option>
             }
         </select>
     </label>

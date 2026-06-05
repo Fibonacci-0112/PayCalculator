@@ -17,7 +17,7 @@
                 <select @bind="Model.FilingStatus">
                     @foreach (var s in Enum.GetValues<FilingStatus>())
                     {
-                        <option value="@s">@FormatStatus(s)</option>
+                        <option value="@s">@s.ToDisplayName()</option>
                     }
                 </select>
             </label>
@@ -25,7 +25,7 @@
                 <select @bind="Model.PayFrequency">
                     @foreach (var f in Enum.GetValues<PayFrequency>())
                     {
-                        <option value="@f">@f</option>
+                        <option value="@f">@f.ToDisplayName()</option>
                     }
                 </select>
             </label>
@@ -33,7 +33,7 @@
                 <select @bind="Model.WorkerType">
                     @foreach (var w in Enum.GetValues<WorkerType>())
                     {
-                        <option value="@w">@w</option>
+                        <option value="@w">@w.ToDisplayName()</option>
                     }
                 </select>
             </label>
@@ -110,14 +110,4 @@
         if (_result is null) return;
         await Store.SaveAsync(_result, $"Scenario {DateTime.Now:yyyy-MM-dd HH:mm}");
     }
-
-    private static string FormatStatus(FilingStatus status) => status switch
-    {
-        FilingStatus.Single => "Single",
-        FilingStatus.MarriedFilingJointly => "Married filing jointly",
-        FilingStatus.MarriedFilingSeparately => "Married filing separately",
-        FilingStatus.HeadOfHousehold => "Head of household",
-        FilingStatus.QualifyingSurvivingSpouse => "Qualifying surviving spouse",
-        _ => status.ToString()
-    };
 }

@@ -16,7 +16,7 @@
                 <input type="radio" name="filing" value="@status"
                        checked="@(_filing == status)"
                        @onchange="@(() => SetFiling(status))" />
-                <span>@FormatStatus(status)</span>
+                <span>@status.ToDisplayName()</span>
             </label>
         }
     </div>
@@ -125,14 +125,4 @@
             Money.Usd(_step4b),
             Money.Usd(_step4c)));
     }
-
-    private static string FormatStatus(FilingStatus s) => s switch
-    {
-        FilingStatus.Single => "Single",
-        FilingStatus.MarriedFilingJointly => "Married filing jointly",
-        FilingStatus.MarriedFilingSeparately => "Married filing separately",
-        FilingStatus.HeadOfHousehold => "Head of household",
-        FilingStatus.QualifyingSurvivingSpouse => "Qualifying surviving spouse",
-        _ => s.ToString()
-    };
 }
