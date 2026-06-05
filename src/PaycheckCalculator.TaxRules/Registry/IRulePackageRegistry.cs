@@ -24,6 +24,7 @@ public sealed class InMemoryRulePackageRegistry : IRulePackageRegistry
                 pair => pair.Key,
                 pair => pair.Value.ToRuleSet(),
                 StringComparer.OrdinalIgnoreCase),
+            StateWithholding: StateRuleCatalog2026.Rules,
             Locals: new Dictionary<string, TaxRuleSet>(),
             RetirementLimits: null,
             HsaFsaLimits: null);

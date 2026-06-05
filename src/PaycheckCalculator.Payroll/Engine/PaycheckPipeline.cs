@@ -87,18 +87,23 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
             socialSecurityWages, medicareWages, input.Ytd, w4,
             input.TaxYear, input.RoundingPolicy, rules.Federal.RuleSetVersion), explain, warnings);
 
-        // 7. Resident-state income tax. When a rule is installed for the state we compute withholding;
-        // otherwise we surface a warning so the UI can flag it as Manual/Unverified. Local taxes are not
-        // yet seeded, so stateLocalResults currently holds state lines only.
+        // 7. Resident-state income tax, computed from the rule installed in the supplied bundle. Some
+        // states (e.g., Pennsylvania) tax elective deferrals that the generic classifier treats as
+        // pre-tax, so we add those back into the state-taxable base. When no rule is installed we surface
+        // a warning so the UI can flag the result as Manual/Unverified. Local taxes are not yet seeded.
         var stateLocalResults = new List<TaxLineResult>();
+        var stateTaxableEffective = stateTaxable;
+        StateWithholdingRule? residentStateRule = null;
         var residentStateCode = input.Jurisdictions.ResidentStateCode;
         if (!string.IsNullOrEmpty(residentStateCode) && residentStateCode != "US")
         {
-            var stateResult = _state.Calculate(new StateWithholdingContext(
-                stateTaxable, annualPayPeriods, w4.FilingStatus, input.TaxYear, input.RoundingPolicy, residentStateCode), explain);
-            if (stateResult is not null)
+            if (rules.StateWithholding.TryGetValue(residentStateCode, out var stateRule))
             {
-                stateLocalResults.Add(stateResult);
+                residentStateRule = stateRule;
+                stateTaxableEffective = stateTaxable + StateTaxableAddBack(perPeriodDeductions, stateRule);
+                stateLocalResults.Add(_state.Calculate(new StateWithholdingContext(
+                    stateRule, stateTaxableEffective, annualPayPeriods, w4.FilingStatus,
+                    input.TaxYear, input.RoundingPolicy), explain));
             }
             else
             {
@@ -141,7 +146,7 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
             MedicareWages: medicareWages,
             MedicareTax: medicareTax,
             AdditionalMedicareTax: addlMedicareTax,
-            StateWages: stateTaxable,
+            StateWages: stateTaxableEffective,
             StateWithholding: stateWithholdingTotal,
             LocalWages: localTaxable,
             LocalWithholding: localWithholdingTotal,
@@ -151,10 +156,14 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
 
         var projection = BuildProjection(input, updatedYtd, federalWithholdingTotal, annualPayPeriods);
 
+        // Audit only the rule-set versions actually used in this calculation, not every installed package.
+        var usedRuleSetVersions = new List<string> { rules.Federal.RuleSetVersion };
+        if (residentStateRule is not null) usedRuleSetVersions.Add(residentStateRule.RuleSetVersion);
+
         var audit = new CalculationAudit(
             GeneratedAt: DateTimeOffset.UtcNow,
             EngineVersion: EngineVersion,
-            RuleSetVersions: rules.AllRuleSetVersions().ToArray(),
+            RuleSetVersions: usedRuleSetVersions.ToArray(),
             RoundingPolicy: input.RoundingPolicy,
             TaxYear: input.TaxYear,
             PayFrequency: input.PayFrequency.ToString(),
@@ -167,7 +176,7 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
             FederalTaxableWages: federalTaxable,
             SocialSecurityWages: socialSecurityWages,
             MedicareWages: medicareWages,
-            StateTaxableWages: stateTaxable,
+            StateTaxableWages: stateTaxableEffective,
             LocalTaxableWages: localTaxable,
             Taxes: allTaxes,
             Deductions: deductionResults,
@@ -196,6 +205,26 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
             list.Add((d, amount));
         }
         return list;
+    }
+
+    // Adds back pre-tax deductions that the resident state taxes even though the generic classifier
+    // treats them as reducing state wages (e.g., Pennsylvania taxes 401(k)/403(b)/457 deferrals).
+    private static Money StateTaxableAddBack(
+        IReadOnlyList<(DeductionInput deduction, Money amount)> deductions, StateWithholdingRule rule)
+    {
+        if (rule.StateTaxablePreTaxDeductions.Count == 0) return Money.Zero;
+
+        var addBack = Money.Zero;
+        foreach (var (deduction, amount) in deductions)
+        {
+            var treatment = deduction.OverrideTreatment ?? DeductionClassifier.Classify(deduction.Type);
+            if (treatment.State == TaxTreatment.Reduces &&
+                rule.StateTaxablePreTaxDeductions.Contains(deduction.Type))
+            {
+                addBack += amount;
+            }
+        }
+        return addBack;
     }
 
     private static AnnualProjectionSnapshot BuildProjection(
