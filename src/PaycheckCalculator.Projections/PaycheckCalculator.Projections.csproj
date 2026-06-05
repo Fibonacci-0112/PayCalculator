@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <RootNamespace>PaycheckCalculator.Projections</RootNamespace>
     <Description>Annual 1040-style projection engine and per-period optimization recommendations.</Description>
   </PropertyGroup>

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <RootNamespace>PaycheckCalculator.Core</RootNamespace>
     <Description>Core domain contracts and value objects for the Paycheck Tax Planning App.</Description>
   </PropertyGroup>
