@@ -1,6 +1,7 @@
 using PaycheckCalculator.Core.ValueObjects;
 using PaycheckCalculator.TaxRules.Federal2026;
 using PaycheckCalculator.TaxRules.Model;
+using PaycheckCalculator.TaxRules.State2026;
 
 namespace PaycheckCalculator.TaxRules.Registry;
 
@@ -19,7 +20,10 @@ public sealed class InMemoryRulePackageRegistry : IRulePackageRegistry
         _bundles[2026] = new TaxRuleSetBundle(
             TaxYear: new TaxYear(2026),
             Federal: FederalRule2026.ToRuleSet(),
-            States: new Dictionary<string, TaxRuleSet>(),
+            States: StateRuleCatalog2026.Rules.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value.ToRuleSet(),
+                StringComparer.OrdinalIgnoreCase),
             Locals: new Dictionary<string, TaxRuleSet>(),
             RetirementLimits: null,
             HsaFsaLimits: null);

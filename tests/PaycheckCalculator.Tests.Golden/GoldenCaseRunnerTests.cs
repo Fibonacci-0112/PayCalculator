@@ -13,9 +13,9 @@ using Xunit;
 
 namespace PaycheckCalculator.Tests.Golden;
 
-public sealed record GoldenCase(string CaseId, int TaxYear, GoldenInput Input, GoldenExpected Expected, decimal Tolerance);
+public sealed record GoldenCase(string CaseId, int TaxYear, GoldenInput Input, GoldenExpected Expected, decimal Tolerance, string? Jurisdiction = null);
 public sealed record GoldenInput(string FilingStatus, string PayFrequency, decimal RegularWages);
-public sealed record GoldenExpected(decimal SocialSecurityTax, decimal MedicareTax);
+public sealed record GoldenExpected(decimal SocialSecurityTax, decimal MedicareTax, decimal? StateIncomeTax = null);
 
 public class GoldenCaseRunnerTests
 {
@@ -39,6 +39,10 @@ public class GoldenCaseRunnerTests
             PropertyNameCaseInsensitive = true
         })!;
 
+        var jurisdiction = string.IsNullOrWhiteSpace(golden.Jurisdiction) || golden.Jurisdiction == "US"
+            ? JurisdictionContext.FederalOnly()
+            : JurisdictionContext.FederalOnly() with { ResidentStateCode = golden.Jurisdiction };
+
         var input = new PaycheckInput(
             ScenarioId: Guid.Parse("00000000-0000-0000-0000-000000000001"),
             TaxYear: new TaxYear(golden.TaxYear),
@@ -48,7 +52,7 @@ public class GoldenCaseRunnerTests
             Deductions: Array.Empty<PaycheckCalculator.Core.Deductions.DeductionInput>(),
             W4: W4Profile.Default(Enum.Parse<FilingStatus>(golden.Input.FilingStatus)),
             Household: HouseholdTaxProfile.Default(Enum.Parse<FilingStatus>(golden.Input.FilingStatus)),
-            Jurisdictions: JurisdictionContext.FederalOnly(),
+            Jurisdictions: jurisdiction,
             Ytd: YtdSnapshot.Empty(new TaxYear(golden.TaxYear)),
             RoundingPolicy: RoundingPolicy.CurrencyHalfAwayFromZeroToCent,
             PayDate: new DateOnly(golden.TaxYear, 1, 15));
@@ -61,5 +65,11 @@ public class GoldenCaseRunnerTests
         var medicare = result.Taxes.Single(t => t.TaxType == "Medicare").TaxAmount.Amount;
         ss.Should().BeApproximately(golden.Expected.SocialSecurityTax, golden.Tolerance);
         medicare.Should().BeApproximately(golden.Expected.MedicareTax, golden.Tolerance);
+
+        if (golden.Expected.StateIncomeTax is { } expectedStateTax)
+        {
+            var stateTax = result.Taxes.Single(t => t.TaxType == "StateIncomeTax").TaxAmount.Amount;
+            stateTax.Should().BeApproximately(expectedStateTax, golden.Tolerance);
+        }
     }
 }
