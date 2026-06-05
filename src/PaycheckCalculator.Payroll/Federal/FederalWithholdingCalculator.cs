@@ -36,7 +36,7 @@ public sealed class FederalWithholdingCalculator
             ? FederalRule2026.MultipleJobsBracketsFor(ctx.W4.FilingStatus)
             : FederalRule2026.StandardBracketsFor(ctx.W4.FilingStatus);
 
-        var annualTaxBeforeCredits = ApplyBrackets(adjustedAnnual.Amount, brackets);
+        var annualTaxBeforeCredits = BracketMath.Apply(adjustedAnnual.Amount, brackets);
         var annualTaxAfterCredits = Math.Max(0m, annualTaxBeforeCredits - ctx.W4.Step3DependentsCredit.Amount);
         var perPeriod = ctx.RoundingPolicy.Round(annualTaxAfterCredits / ctx.AnnualPayPeriods);
         var withExtra = perPeriod + ctx.W4.Step4cExtraWithholdingPerPeriod.Amount;
@@ -80,18 +80,5 @@ public sealed class FederalWithholdingCalculator
             SupportLevel: TaxRuleSupportLevel.Verified,
             Explanation: new[] { explanation },
             Warnings: Array.Empty<DiagnosticWarning>());
-    }
-
-    private static decimal ApplyBrackets(decimal taxableAmount, IReadOnlyList<TaxBracket> brackets)
-    {
-        foreach (var bracket in brackets)
-        {
-            if (!bracket.Ceiling.HasValue || taxableAmount <= bracket.Ceiling.Value)
-            {
-                return bracket.BaseTax + (taxableAmount - bracket.Floor) * bracket.MarginalRate;
-            }
-        }
-        var last = brackets[^1];
-        return last.BaseTax + (taxableAmount - last.Floor) * last.MarginalRate;
     }
 }

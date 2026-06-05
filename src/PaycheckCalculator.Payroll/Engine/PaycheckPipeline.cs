@@ -7,6 +7,7 @@ using PaycheckCalculator.Core.Ytd;
 using PaycheckCalculator.Payroll.Deductions;
 using PaycheckCalculator.Payroll.Earnings;
 using PaycheckCalculator.Payroll.Federal;
+using PaycheckCalculator.Payroll.StateLocal;
 using PaycheckCalculator.TaxRules.Model;
 
 namespace PaycheckCalculator.Payroll.Engine;
@@ -19,6 +20,7 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
     private readonly FederalWithholdingCalculator _federal = new();
     private readonly FicaCalculator _fica = new();
     private readonly SupplementalWageCalculator _supplemental = new();
+    private readonly StateWithholdingCalculator _state = new();
 
     public CalculationResult Calculate(PaycheckInput input, TaxRuleSetBundle rules)
     {
@@ -85,19 +87,27 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
             socialSecurityWages, medicareWages, input.Ytd, w4,
             input.TaxYear, input.RoundingPolicy, rules.Federal.RuleSetVersion), explain, warnings);
 
-        // 7. State + local: rule packages are wired in by the StateLocalTaxEngine in
-        // PaycheckCalculator.Jurisdictions when present. For MVP we contribute zero state/local tax
-        // and surface a warning so the UI can flag it as Manual/Unverified.
+        // 7. Resident-state income tax. When a rule is installed for the state we compute withholding;
+        // otherwise we surface a warning so the UI can flag it as Manual/Unverified. Local taxes are not
+        // yet seeded, so stateLocalResults currently holds state lines only.
         var stateLocalResults = new List<TaxLineResult>();
-        if (!string.IsNullOrEmpty(input.Jurisdictions.ResidentStateCode) &&
-            input.Jurisdictions.ResidentStateCode != "US" &&
-            !rules.States.ContainsKey(input.Jurisdictions.ResidentStateCode))
+        var residentStateCode = input.Jurisdictions.ResidentStateCode;
+        if (!string.IsNullOrEmpty(residentStateCode) && residentStateCode != "US")
         {
-            warnings.Add(new DiagnosticWarning(
-                WarningCategory.JurisdictionUnverified, WarningSeverity.Warning,
-                $"State withholding for {input.Jurisdictions.ResidentStateCode} is not in the installed rule bundle. " +
-                "Enter a manual rate to include state tax.",
-                new Dictionary<string, string> { ["state"] = input.Jurisdictions.ResidentStateCode }));
+            var stateResult = _state.Calculate(new StateWithholdingContext(
+                stateTaxable, annualPayPeriods, w4.FilingStatus, input.TaxYear, input.RoundingPolicy, residentStateCode), explain);
+            if (stateResult is not null)
+            {
+                stateLocalResults.Add(stateResult);
+            }
+            else
+            {
+                warnings.Add(new DiagnosticWarning(
+                    WarningCategory.JurisdictionUnverified, WarningSeverity.Warning,
+                    $"State withholding for {residentStateCode} is not in the installed rule bundle. " +
+                    "Enter a manual rate to include state tax.",
+                    new Dictionary<string, string> { ["state"] = residentStateCode }));
+            }
         }
 
         // Assemble tax lines.
@@ -114,6 +124,12 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
         var ssTax = ficaResults.FirstOrDefault(r => r.TaxType == "SocialSecurity")?.TaxAmount ?? Money.Zero;
         var medicareTax = ficaResults.FirstOrDefault(r => r.TaxType == "Medicare")?.TaxAmount ?? Money.Zero;
         var addlMedicareTax = ficaResults.FirstOrDefault(r => r.TaxType == "AdditionalMedicare")?.TaxAmount ?? Money.Zero;
+        var stateWithholdingTotal = stateLocalResults
+            .Where(r => r.TaxType.StartsWith("State", StringComparison.Ordinal))
+            .Aggregate(Money.Zero, (acc, r) => acc + r.TaxAmount);
+        var localWithholdingTotal = stateLocalResults
+            .Where(r => r.TaxType.StartsWith("Local", StringComparison.Ordinal))
+            .Aggregate(Money.Zero, (acc, r) => acc + r.TaxAmount);
 
         var ytdDelta = new YtdDelta(
             PayDate: input.PayDate,
@@ -126,9 +142,9 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
             MedicareTax: medicareTax,
             AdditionalMedicareTax: addlMedicareTax,
             StateWages: stateTaxable,
-            StateWithholding: Money.Zero,
+            StateWithholding: stateWithholdingTotal,
             LocalWages: localTaxable,
-            LocalWithholding: Money.Zero,
+            LocalWithholding: localWithholdingTotal,
             PreTaxDeductions: preTaxFederal,
             PostTaxDeductions: totalDeductions - preTaxFederal);
         var updatedYtd = input.Ytd.Apply(ytdDelta);
@@ -206,7 +222,7 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
         var taxableIncome = Money.Max(Money.Zero, agi - deductible);
 
         var brackets = TaxRules.Federal2026.FederalRule2026.StandardBracketsFor(w4.FilingStatus);
-        var federalTaxAmount = ApplyBracketsToProjection(taxableIncome.Amount, brackets);
+        var federalTaxAmount = BracketMath.Apply(taxableIncome.Amount, brackets);
         var federalCredits = w4.Step3DependentsCredit;
         var federalTax = Money.Max(Money.Zero, Money.Usd(federalTaxAmount) - federalCredits);
 
@@ -244,16 +260,5 @@ public sealed class PaycheckPipeline : IPaycheckCalculator
                 $"Withholding this period: {federalWithholdingThisPeriod}.",
                 "State and local taxes are not included in the federal-only projection."
             });
-    }
-
-    private static decimal ApplyBracketsToProjection(decimal taxableAmount, IReadOnlyList<TaxBracket> brackets)
-    {
-        foreach (var bracket in brackets)
-        {
-            if (!bracket.Ceiling.HasValue || taxableAmount <= bracket.Ceiling.Value)
-                return bracket.BaseTax + (taxableAmount - bracket.Floor) * bracket.MarginalRate;
-        }
-        var last = brackets[^1];
-        return last.BaseTax + (taxableAmount - last.Floor) * last.MarginalRate;
     }
 }

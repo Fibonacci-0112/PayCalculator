@@ -163,6 +163,65 @@ public class PaycheckPipelineTests
     }
 
     [Fact]
+    public void Illinois_resident_has_state_income_tax_line_and_no_unverified_warning()
+    {
+        var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "IL" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
+        // annual 65,000 - 2,775 IL exemption = 62,225 * 4.95% = 3,080.1375, / 26 = 118.47
+        var expected = decimal.Round((65_000m - 2_775m) * 0.0495m / 26m, 2, MidpointRounding.AwayFromZero);
+        state.TaxAmount.Amount.Should().Be(expected);
+        state.Authority.AuthorityType.Should().Be(TaxAuthorityType.StateIncomeTax);
+        state.SupportLevel.Should().Be(TaxRuleSupportLevel.Estimated);
+        state.Explanation.Should().NotBeEmpty();
+        result.Warnings.Should().NotContain(w => w.Category == WarningCategory.JurisdictionUnverified);
+    }
+
+    [Fact]
+    public void Pennsylvania_taxes_compensation_flat_with_no_standard_deduction()
+    {
+        var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "PA" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
+        state.TaxAmount.Amount.Should().Be(decimal.Round(2500m * 0.0307m, 2, MidpointRounding.AwayFromZero));
+    }
+
+    [Fact]
+    public void State_income_tax_flows_into_total_state_and_local_and_ytd()
+    {
+        var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "PA" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        var stateTax = result.Taxes.Single(t => t.TaxType == "StateIncomeTax").TaxAmount.Amount;
+        stateTax.Should().BeGreaterThan(0m);
+        result.TotalStateAndLocal.Amount.Should().Be(stateTax);
+        result.YtdDelta.StateWithholding.Amount.Should().Be(stateTax);
+        result.UpdatedYtd.StateWithholding.Amount.Should().Be(stateTax);
+    }
+
+    [Fact]
+    public void Pre_tax_401k_reduces_state_taxable_wages()
+    {
+        var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+            deductions: new[] { new DeductionInput(DeductionType.Traditional401k, DeductionAmountType.PercentOfGross, 10m) },
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "PA" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        result.StateTaxableWages.Amount.Should().Be(2250m);
+        var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
+        state.TaxAmount.Amount.Should().Be(decimal.Round(2250m * 0.0307m, 2, MidpointRounding.AwayFromZero));
+    }
+
+    [Fact]
     public void Result_contains_explainability_for_every_tax_line()
     {
         var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m);

@@ -1,0 +1,17 @@
+{
+  "caseId": "state-2026-il-biweekly-single-2500",
+  "taxYear": 2026,
+  "jurisdiction": "IL",
+  "input": {
+    "filingStatus": "Single",
+    "payFrequency": "Biweekly",
+    "regularWages": 2500.00
+  },
+  "expected": {
+    "socialSecurityTax": 155.00,
+    "medicareTax": 36.25,
+    "stateIncomeTax": 118.47
+  },
+  "tolerance": 0.01,
+  "sourceMapping": ["Illinois Booklet IL-700-T", "Form IL-W-4"]
+}
