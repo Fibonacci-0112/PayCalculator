@@ -53,8 +53,8 @@ The MAUI client (`src/PaycheckCalculator.Maui/`) is deliberately *not* in `Paych
 
 ```bash
 dotnet workload install maui
-dotnet build src/PaycheckCalculator.Maui/PaycheckCalculator.Maui.csproj -f net8.0-android
-# or -f net8.0-ios / net8.0-maccatalyst / net8.0-windows10.0.19041.0 on the appropriate host OS
+dotnet build src/PaycheckCalculator.Maui/PaycheckCalculator.Maui.csproj -f net11.0-android
+# or -f net11.0-ios / net11.0-maccatalyst / net11.0-windows10.0.19041.0 on the appropriate host OS
 ```
 
 Project references inside the MAUI csproj pull in `PaycheckCalculator.SharedUi`, `PaycheckCalculator.Sync`, and `PaycheckCalculator.ImportExport` transitively, so a single build command compiles everything the MAUI head needs.
@@ -99,7 +99,7 @@ What the MAUI head provides on top of `SharedUi`:
 
 ## Building & running
 
-This repo uses **.NET 10 SDK** because the `.slnx` solution format is only supported from .NET 9 Preview 7+. The project target framework is still `net8.0` so libraries are LTS-compatible.
+This repo uses the **.NET 11 SDK (Preview 4, `11.0.100-preview.4.26230.115`)**, pinned in `global.json`. The projects target `net11.0` (the MAUI head multi-targets `net11.0-android`/`-ios`/`-maccatalyst`/`-windows`). Because this is a preview SDK, install it from the [.NET 11 download page](https://dotnet.microsoft.com/download/dotnet/11.0) before building.
 
 ```bash
 # Restore + build the whole solution
