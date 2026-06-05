@@ -29,7 +29,7 @@ public sealed class StateWithholdingCalculator
         var standardDeduction = Money.Usd(rule.StandardDeductionFor(ctx.FilingStatus));
         var adjustedAnnual = Money.Max(Money.Zero, annualWages - standardDeduction);
 
-        var annualTax = BracketMath.Apply(adjustedAnnual.Amount, rule.Brackets);
+        var annualTax = BracketMath.Apply(adjustedAnnual.Amount, rule.BracketsFor(ctx.FilingStatus));
         var perPeriod = ctx.RoundingPolicy.Round(annualTax / ctx.AnnualPayPeriods);
         var finalAmount = Money.Usd(perPeriod);
 

@@ -5,7 +5,9 @@ namespace PaycheckCalculator.TaxRules.Model;
 
 /// <summary>
 /// A state income-tax withholding rule. A flat-rate state is modeled as a single open-ended bracket
-/// <c>(0, null, 0, rate)</c>; graduated states supply a full bracket schedule. The same shape feeds
+/// <c>(0, null, 0, rate)</c>; graduated states supply a full bracket schedule. States whose schedule
+/// varies by filing status (e.g. New York) supply per-status schedules in <see cref="BracketsByStatus"/>
+/// and use <see cref="Brackets"/> as the default for any status not overridden. The same shape feeds
 /// the generic state withholding calculator, so adding a state is a data-only change.
 /// </summary>
 public sealed record StateWithholdingRule(
@@ -19,11 +21,21 @@ public sealed record StateWithholdingRule(
     DateOnly? EffectiveTo,
     IReadOnlyDictionary<FilingStatus, decimal> AnnualStandardDeduction,
     IReadOnlyList<TaxBracket> Brackets,
-    IReadOnlyList<DeductionType> StateTaxablePreTaxDeductions)
+    IReadOnlyList<DeductionType> StateTaxablePreTaxDeductions,
+    IReadOnlyDictionary<FilingStatus, IReadOnlyList<TaxBracket>>? BracketsByStatus = null)
 {
     /// <summary>Annual standard deduction / personal-exemption allowance for a filing status (0 when none).</summary>
     public decimal StandardDeductionFor(FilingStatus status) =>
         AnnualStandardDeduction.TryGetValue(status, out var amount) ? amount : 0m;
+
+    /// <summary>
+    /// The withholding bracket schedule for a filing status: the status-specific schedule when one is
+    /// supplied (graduated states that differ by status), otherwise the default <see cref="Brackets"/>.
+    /// </summary>
+    public IReadOnlyList<TaxBracket> BracketsFor(FilingStatus status) =>
+        BracketsByStatus is not null && BracketsByStatus.TryGetValue(status, out var brackets)
+            ? brackets
+            : Brackets;
 
     /// <summary>
     /// Projects this rule onto the canonical <see cref="TaxRuleSet"/> so it can sit alongside the
@@ -42,13 +54,7 @@ public sealed record StateWithholdingRule(
         SourceDocumentUri: null,
         SourceRevision: SourceRevision,
         EngineMinVersion: "1.0.0",
-        Tables: new[]
-        {
-            new TaxTable(
-                $"withholding-{StateCode.ToLowerInvariant()}",
-                $"{DisplayName} state withholding",
-                Brackets)
-        },
+        Tables: BuildWithholdingTables(),
         Formulas: new[]
         {
             new FormulaRule(
@@ -66,4 +72,30 @@ public sealed record StateWithholdingRule(
         Credits: Array.Empty<CreditRule>(),
         ValidationCases: Array.Empty<ValidationCase>(),
         PackageSignature: null);
+
+    /// <summary>
+    /// Emits the default withholding table plus one table per status-specific schedule, so a downloaded
+    /// package reproduces a graduated state's per-filing-status brackets, not just the default schedule.
+    /// </summary>
+    private IReadOnlyList<TaxTable> BuildWithholdingTables()
+    {
+        var key = StateCode.ToLowerInvariant();
+        var tables = new List<TaxTable>
+        {
+            new($"withholding-{key}", $"{DisplayName} state withholding", Brackets)
+        };
+
+        if (BracketsByStatus is not null)
+        {
+            foreach (var entry in BracketsByStatus.OrderBy(pair => pair.Key))
+            {
+                tables.Add(new TaxTable(
+                    $"withholding-{key}-{entry.Key.ToString().ToLowerInvariant()}",
+                    $"{DisplayName} state withholding ({entry.Key})",
+                    entry.Value));
+            }
+        }
+
+        return tables;
+    }
 }

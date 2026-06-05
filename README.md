@@ -98,7 +98,7 @@ What the MAUI head provides on top of `SharedUi`:
 | Schedule C / SE / QBI estimator | Implemented |
 | Payday-based budget allocator | Implemented |
 | Jurisdiction resolver (manual mode) | Implemented; address/geocoding adapters interface-only |
-| State income tax (flat-rate: CO, IL, PA) | Implemented (Estimated); graduated states + local taxes pending; unseeded states emit `JurisdictionUnverified` |
+| State income tax (flat-rate: CO, IL, PA; graduated: VA, NY) | Implemented (Estimated); local taxes pending; unseeded states emit `JurisdictionUnverified` |
 | Versioned signed tax-rule packages | Implemented (RSA SHA-256 signer + verifier shell) |
 | E2EE sync envelopes (AES-GCM) | Implemented; tests prove ciphertext leaks no sensitive amounts |
 | Minimal API for sync/rules/devices/wrapped keys | Implemented |
@@ -141,13 +141,13 @@ dotnet run --project tools/GoldenCaseRunner -- tests/PaycheckCalculator.Tests.Go
 - All money math is `decimal` (`Money` value object). No binary floating-point in tax calculations.
 - Every `TaxLineResult` carries an `ExplainLine[]` with `FormulaId`, `FormulaText`, raw inputs, `RuleSetVersion`, `TaxYear`, `JurisdictionCode`, `RoundingMethod`, and the originating IRS form names.
 - Every `CalculationResult` carries a `CalculationAudit` with the engine version, all rule-set versions used, and the rounding policy.
-- State income tax is computed for the seeded flat-rate states (CO, IL, PA) at `Estimated` support level; for any other state the engine refuses to silently return zero and emits a `JurisdictionUnverified` diagnostic so the UI can mark the result as Manual/Unverified.
+- State income tax is computed for the seeded states — flat-rate CO, IL, PA and graduated-bracket VA (one schedule across all filing statuses) and NY (separate single/married schedules) — at `Estimated` support level; for any other state the engine refuses to silently return zero and emits a `JurisdictionUnverified` diagnostic so the UI can mark the result as Manual/Unverified.
 - `EnvelopeEncryptor` (Sync) uses AES-GCM with random 96-bit nonces; tests verify ciphertext bytes never contain sample sensitive amounts or employer names.
 - The API never sees plaintext financial data. `EncryptedEnvelopeRecord` exposes only `SyncItemId`, `UserId`, `OwnerDeviceId`, `ItemKind`, `ItemVersion`, `UpdatedAtUtc`, `Nonce`, `Ciphertext`, `CiphertextHash`, `Signature`.
 
 ## What's stubbed for follow-up phases
 
-- Graduated-bracket states and local/city taxes: the engine computes flat-rate states (CO, IL, PA) today via `StateRuleCatalog2026`; additional states and locals are data-only additions. Seeded figures are projected 2026 estimates pending official withholding tables.
+- Local/city taxes and the remaining states: the engine computes flat-rate (CO, IL, PA) and graduated-bracket (VA, NY) states today via `StateRuleCatalog2026`; further states and locals are data-only additions. Seeded figures are projected 2026 estimates pending official withholding tables.
 - Real geocoding/boundary providers: `IGeocodingProvider` and `IBoundaryProvider` interfaces only.
 - Account auth, passkeys, MFA, trusted-device QR pairing: API endpoints are stubbed; backend stores in-memory.
 - PDF / Excel / accountant-packet generation: report DTOs in place; renderers pending.

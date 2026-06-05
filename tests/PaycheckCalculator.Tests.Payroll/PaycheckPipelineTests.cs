@@ -241,6 +241,57 @@ public class PaycheckPipelineTests
     }
 
     [Fact]
+    public void Virginia_resident_withholding_walks_the_graduated_bracket_schedule()
+    {
+        var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "VA" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
+        // annual 65,000 - 8,000 VA standard deduction = 57,000; tax = 720 + (57,000 - 17,000) * 5.75% = 3,020; / 26
+        var expected = decimal.Round((720m + (57_000m - 17_000m) * 0.0575m) / 26m, 2, MidpointRounding.AwayFromZero);
+        state.TaxAmount.Amount.Should().Be(expected);
+        state.SupportLevel.Should().Be(TaxRuleSupportLevel.Estimated);
+        result.Warnings.Should().NotContain(w => w.Category == WarningCategory.JurisdictionUnverified);
+    }
+
+    [Fact]
+    public void NewYork_single_filer_uses_the_single_graduated_schedule()
+    {
+        var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "NY" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
+        // annual 65,000 - 8,000 NY standard deduction = 57,000; tax = 599.50 + (57,000 - 13,900) * 5.5% = 2,970.00; / 26
+        var expected = decimal.Round((599.50m + (57_000m - 13_900m) * 0.055m) / 26m, 2, MidpointRounding.AwayFromZero);
+        state.TaxAmount.Amount.Should().Be(expected);
+    }
+
+    [Fact]
+    public void NewYork_married_filer_uses_the_married_schedule_and_deduction()
+    {
+        var input = NewInput(FilingStatus.MarriedFilingJointly, PayFrequency.Biweekly, regular: 2500m,
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "NY" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
+        // MFJ uses the married schedule and a 16,050 deduction: adjusted 48,950; tax = 1,202 + (48,950 - 27,900) * 5.5% = 2,359.75; / 26
+        var expected = decimal.Round((1_202m + (48_950m - 27_900m) * 0.055m) / 26m, 2, MidpointRounding.AwayFromZero);
+        state.TaxAmount.Amount.Should().Be(expected);
+
+        // The married schedule and larger deduction must yield a different result than a single filer at the same wage.
+        var single = _pipeline.Calculate(
+            NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+                jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "NY" }),
+            _registry.GetBundle(new TaxYear(2026)));
+        single.Taxes.Single(t => t.TaxType == "StateIncomeTax").TaxAmount.Amount.Should().NotBe(expected);
+    }
+
+    [Fact]
     public void Result_contains_explainability_for_every_tax_line()
     {
         var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m);
