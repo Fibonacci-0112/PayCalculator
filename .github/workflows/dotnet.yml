@@ -20,9 +20,14 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '11.0.100-preview.4.26230.115'
+    # ubuntu-latest has neither the .NET MAUI workload nor the iOS/Mac Catalyst/Windows
+    # build hosts, so the MAUI head can't be restored or built here. Restore, build, and
+    # test the PaycheckCalculator.CI.slnf solution filter, which includes every project
+    # except the MAUI head. Developers build the full PaycheckCalculator.slnx (MAUI
+    # included) locally after `dotnet workload install maui`.
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore PaycheckCalculator.CI.slnf
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build PaycheckCalculator.CI.slnf --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test PaycheckCalculator.CI.slnf --no-build --verbosity normal
