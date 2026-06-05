@@ -17,6 +17,7 @@
     <Project Path="src/PaycheckCalculator.ImportExport/PaycheckCalculator.ImportExport.csproj" />
     <Project Path="src/PaycheckCalculator.Sync/PaycheckCalculator.Sync.csproj" />
     <Project Path="src/PaycheckCalculator.SharedUi/PaycheckCalculator.SharedUi.csproj" />
+    <Project Path="src/PaycheckCalculator.Maui/PaycheckCalculator.Maui.csproj" />
     <Project Path="src/PaycheckCalculator.Web/PaycheckCalculator.Web.csproj" />
     <Project Path="src/PaycheckCalculator.Api/PaycheckCalculator.Api.csproj" />
     <Project Path="src/PaycheckCalculator.RuleAdmin/PaycheckCalculator.RuleAdmin.csproj" />

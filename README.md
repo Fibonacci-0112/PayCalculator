@@ -49,7 +49,16 @@ global.json                      # SDK pin
   2026/federal/federal-2026-pub15t.json  # Canonical 2026 federal rule data
 ```
 
-The MAUI client (`src/PaycheckCalculator.Maui/`) is deliberately *not* in `PaycheckCalculator.slnx` so the rest of the solution restores and tests on a vanilla .NET SDK install (CI on `ubuntu-latest` does not have the MAUI workload). To build the MAUI head locally:
+The MAUI head (`src/PaycheckCalculator.Maui/`) is part of `PaycheckCalculator.slnx`, but building the full solution requires the .NET MAUI workload, and the iOS / Mac Catalyst / Windows target frameworks only build on a matching host OS. Because CI runs on `ubuntu-latest` without the MAUI workload, it restores, builds, and tests through a solution filter — [`PaycheckCalculator.CI.slnf`](PaycheckCalculator.CI.slnf) — that includes every project **except** the MAUI head:
+
+```bash
+# Workload-free subset — exactly what CI restores, builds, and tests
+dotnet restore PaycheckCalculator.CI.slnf
+dotnet build  PaycheckCalculator.CI.slnf --no-restore
+dotnet test   PaycheckCalculator.CI.slnf --no-build
+```
+
+To build the MAUI head itself, install the workload and target a framework matching the host OS you're on:
 
 ```bash
 dotnet workload install maui
@@ -57,7 +66,7 @@ dotnet build src/PaycheckCalculator.Maui/PaycheckCalculator.Maui.csproj -f net11
 # or -f net11.0-ios / net11.0-maccatalyst / net11.0-windows10.0.19041.0 on the appropriate host OS
 ```
 
-Project references inside the MAUI csproj pull in `PaycheckCalculator.SharedUi`, `PaycheckCalculator.Sync`, and `PaycheckCalculator.ImportExport` transitively, so a single build command compiles everything the MAUI head needs.
+Project references inside the MAUI csproj pull in `PaycheckCalculator.SharedUi`, `PaycheckCalculator.Sync`, and `PaycheckCalculator.ImportExport` transitively, so a single build command compiles everything the MAUI head needs. With the workload installed you can also build the entire solution — MAUI included — with `dotnet build PaycheckCalculator.slnx`.
 
 What the MAUI head provides on top of `SharedUi`:
 
@@ -102,11 +111,14 @@ What the MAUI head provides on top of `SharedUi`:
 This repo uses the **.NET 11 SDK (Preview 4, `11.0.100-preview.4.26230.115`)**, pinned in `global.json`. The projects target `net11.0` (the MAUI head multi-targets `net11.0-android`/`-ios`/`-maccatalyst`/`-windows`). Because this is a preview SDK, install it from the [.NET 11 download page](https://dotnet.microsoft.com/download/dotnet/11.0) before building.
 
 ```bash
-# Restore + build the whole solution
-dotnet build PaycheckCalculator.slnx
+# Restore + build everything except the MAUI head (the workload-free subset CI uses)
+dotnet build PaycheckCalculator.CI.slnf
 
-# Run all tests (27 passing)
-dotnet test PaycheckCalculator.slnx
+# Run all tests
+dotnet test PaycheckCalculator.CI.slnf
+
+# Build the whole solution including the MAUI head (requires: dotnet workload install maui)
+dotnet build PaycheckCalculator.slnx
 
 # Run the Blazor Web App
 dotnet run --project src/PaycheckCalculator.Web --urls http://localhost:5080
