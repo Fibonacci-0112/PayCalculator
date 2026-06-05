@@ -1,3 +1,4 @@
+using PaycheckCalculator.Core.Deductions;
 using PaycheckCalculator.Core.ValueObjects;
 
 namespace PaycheckCalculator.TaxRules.Model;
@@ -17,7 +18,8 @@ public sealed record StateWithholdingRule(
     DateOnly EffectiveFrom,
     DateOnly? EffectiveTo,
     IReadOnlyDictionary<FilingStatus, decimal> AnnualStandardDeduction,
-    IReadOnlyList<TaxBracket> Brackets)
+    IReadOnlyList<TaxBracket> Brackets,
+    IReadOnlyList<DeductionType> StateTaxablePreTaxDeductions)
 {
     /// <summary>Annual standard deduction / personal-exemption allowance for a filing status (0 when none).</summary>
     public decimal StandardDeductionFor(FilingStatus status) =>
@@ -25,7 +27,9 @@ public sealed record StateWithholdingRule(
 
     /// <summary>
     /// Projects this rule onto the canonical <see cref="TaxRuleSet"/> so it can sit alongside the
-    /// federal package in the bundle for versioning, audit, and the rules API surface.
+    /// federal package in the bundle for versioning, audit, and the rules API surface. The standard
+    /// deduction is emitted as <see cref="DeductionRule"/> entries so a downloaded package can
+    /// reproduce the withholding calculation.
     /// </summary>
     public TaxRuleSet ToRuleSet() => new(
         RuleSetId: RuleSetId,
@@ -52,7 +56,13 @@ public sealed record StateWithholdingRule(
                 $"{DisplayName} withholding: marginal brackets applied to annualized wages less the standard deduction",
                 "see calculator")
         },
-        Deductions: Array.Empty<DeductionRule>(),
+        Deductions: AnnualStandardDeduction
+            .OrderBy(entry => entry.Key)
+            .Select(entry => new DeductionRule(
+                $"standard-deduction-{entry.Key}",
+                $"{DisplayName} annual standard deduction ({entry.Key})",
+                entry.Value))
+            .ToArray(),
         Credits: Array.Empty<CreditRule>(),
         ValidationCases: Array.Empty<ValidationCase>(),
         PackageSignature: null);

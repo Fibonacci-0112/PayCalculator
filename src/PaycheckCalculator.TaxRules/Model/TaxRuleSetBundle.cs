@@ -6,6 +6,7 @@ public sealed record TaxRuleSetBundle(
     TaxYear TaxYear,
     TaxRuleSet Federal,
     IReadOnlyDictionary<string, TaxRuleSet> States,
+    IReadOnlyDictionary<string, StateWithholdingRule> StateWithholding,
     IReadOnlyDictionary<string, TaxRuleSet> Locals,
     TaxRuleSet? RetirementLimits,
     TaxRuleSet? HsaFsaLimits)

@@ -171,8 +171,8 @@ public class PaycheckPipelineTests
         var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
 
         var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
-        // annual 65,000 - 2,775 IL exemption = 62,225 * 4.95% = 3,080.1375, / 26 = 118.47
-        var expected = decimal.Round((65_000m - 2_775m) * 0.0495m / 26m, 2, MidpointRounding.AwayFromZero);
+        // annual 65,000 - 2,925 IL exemption = 62,075 * 4.95% = 3,072.7125, / 26 = 118.18
+        var expected = decimal.Round((65_000m - 2_925m) * 0.0495m / 26m, 2, MidpointRounding.AwayFromZero);
         state.TaxAmount.Amount.Should().Be(expected);
         state.Authority.AuthorityType.Should().Be(TaxAuthorityType.StateIncomeTax);
         state.SupportLevel.Should().Be(TaxRuleSupportLevel.Estimated);
@@ -208,7 +208,24 @@ public class PaycheckPipelineTests
     }
 
     [Fact]
-    public void Pre_tax_401k_reduces_state_taxable_wages()
+    public void Illinois_conforms_to_federal_so_pre_tax_401k_reduces_state_taxable_wages()
+    {
+        var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
+            deductions: new[] { new DeductionInput(DeductionType.Traditional401k, DeductionAmountType.PercentOfGross, 10m) },
+            jurisdiction: JurisdictionContext.FederalOnly() with { ResidentStateCode = "IL" });
+
+        var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
+
+        result.StateTaxableWages.Amount.Should().Be(2250m);
+        var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
+        state.TaxableWages.Amount.Should().Be(2250m);
+        // annual 58,500 - 2,925 exemption = 55,575 * 4.95% / 26
+        var expected = decimal.Round((2250m * 26 - 2_925m) * 0.0495m / 26m, 2, MidpointRounding.AwayFromZero);
+        state.TaxAmount.Amount.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Pennsylvania_taxes_401k_deferrals_so_they_do_not_reduce_state_wages()
     {
         var input = NewInput(FilingStatus.Single, PayFrequency.Biweekly, regular: 2500m,
             deductions: new[] { new DeductionInput(DeductionType.Traditional401k, DeductionAmountType.PercentOfGross, 10m) },
@@ -216,9 +233,11 @@ public class PaycheckPipelineTests
 
         var result = _pipeline.Calculate(input, _registry.GetBundle(new TaxYear(2026)));
 
-        result.StateTaxableWages.Amount.Should().Be(2250m);
+        // PA taxes the 401(k) deferral, so the state base is the full gross, not the reduced bucket.
         var state = result.Taxes.Single(t => t.TaxType == "StateIncomeTax");
-        state.TaxAmount.Amount.Should().Be(decimal.Round(2250m * 0.0307m, 2, MidpointRounding.AwayFromZero));
+        state.TaxableWages.Amount.Should().Be(2500m);
+        state.TaxAmount.Amount.Should().Be(decimal.Round(2500m * 0.0307m, 2, MidpointRounding.AwayFromZero));
+        result.StateTaxableWages.Amount.Should().Be(2500m);
     }
 
     [Fact]
