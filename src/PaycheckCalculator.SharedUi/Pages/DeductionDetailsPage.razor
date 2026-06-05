@@ -34,14 +34,14 @@
                     var treatment = line.OverrideTreatment
                         ?? PaycheckCalculator.Payroll.Deductions.DeductionClassifier.Classify(line.Type);
                     <tr>
-                        <td>@line.Type</td>
-                        <td>@line.AmountType</td>
+                        <td>@line.Type.ToDisplayName()</td>
+                        <td>@line.AmountType.ToDisplayName()</td>
                         <td class="pc-money">@FormatAmount(line)</td>
-                        <td>@treatment.FederalIncomeTax</td>
-                        <td>@treatment.SocialSecurity</td>
-                        <td>@treatment.Medicare</td>
-                        <td>@treatment.State</td>
-                        <td>@treatment.Local</td>
+                        <td>@treatment.FederalIncomeTax.ToDisplayName()</td>
+                        <td>@treatment.SocialSecurity.ToDisplayName()</td>
+                        <td>@treatment.Medicare.ToDisplayName()</td>
+                        <td>@treatment.State.ToDisplayName()</td>
+                        <td>@treatment.Local.ToDisplayName()</td>
                         <td><button class="pc-link" @onclick="@(() => State.RemoveDeduction(index))">Remove</button></td>
                     </tr>
                 }
@@ -57,7 +57,7 @@
             <select @bind="_type">
                 @foreach (var t in Enum.GetValues<DeductionType>())
                 {
-                    <option value="@t">@t</option>
+                    <option value="@t">@t.ToDisplayName()</option>
                 }
             </select>
         </label>
@@ -65,7 +65,7 @@
             <select @bind="_amountType">
                 @foreach (var t in Enum.GetValues<DeductionAmountType>())
                 {
-                    <option value="@t">@t</option>
+                    <option value="@t">@t.ToDisplayName()</option>
                 }
             </select>
         </label>
@@ -83,12 +83,12 @@
         <button class="pc-primary" @onclick="Add">Add deduction</button>
     </div>
     <p class="pc-hint">
-        Default tax treatment for <strong>@_type</strong>:
+        Default tax treatment for <strong>@_type.ToDisplayName()</strong>:
         @{
             var tx = PaycheckCalculator.Payroll.Deductions.DeductionClassifier.Classify(_type);
         }
-        Federal=@tx.FederalIncomeTax, SS=@tx.SocialSecurity, Medicare=@tx.Medicare,
-        State=@tx.State, Local=@tx.Local.
+        Federal=@tx.FederalIncomeTax.ToDisplayName(), SS=@tx.SocialSecurity.ToDisplayName(), Medicare=@tx.Medicare.ToDisplayName(),
+        State=@tx.State.ToDisplayName(), Local=@tx.Local.ToDisplayName().
     </p>
 </section>
 

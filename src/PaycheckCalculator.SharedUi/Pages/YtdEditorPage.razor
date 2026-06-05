@@ -65,7 +65,7 @@
         Remaining base before SS tax stops: <strong>@Money.Usd(Math.Max(0m, 184_500m - _ssWages))</strong>.
     </p>
     <p>
-        Additional Medicare threshold for current filing status (@State.W4.FilingStatus):
+        Additional Medicare threshold for current filing status (@State.W4.FilingStatus.ToDisplayName()):
         <strong>@Money.Usd(PaycheckCalculator.TaxRules.Federal2026.FederalRule2026.AdditionalMedicareThreshold[State.W4.FilingStatus])</strong>.
         Medicare wages YTD: <strong>@Money.Usd(_medicareWages)</strong>.
     </p>

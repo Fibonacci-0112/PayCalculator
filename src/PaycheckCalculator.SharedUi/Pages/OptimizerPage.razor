@@ -18,7 +18,7 @@
             <select @bind="_goal">
                 @foreach (var g in Enum.GetValues<PaycheckCalculator.Projections.Optimization.OptimizationGoal>())
                 {
-                    <option value="@g">@g</option>
+                    <option value="@g">@g.ToDisplayName()</option>
                 }
             </select>
         </label>
