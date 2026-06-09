@@ -1,7 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFrameworks>net11.0-android;net11.0-ios;net11.0-maccatalyst</TargetFrameworks>
+    <!--
+      Pin explicit platform versions on every platform TFM. Without them the .NET SDK
+      is supposed to inject a default platform version automatically, but the net11.0
+      preview workloads don't always do so, which surfaces as NuGet error NU1012
+      ("Platform version is not present for one or more target frameworks") at restore.
+      Pinning makes restore deterministic. Versions track the .NET 11 workload defaults:
+      Android API 36, iOS 18.2, Mac Catalyst 18.2.
+    -->
+    <TargetFrameworks>net11.0-android36.0;net11.0-ios18.2;net11.0-maccatalyst18.2</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
     <UseMaui>true</UseMaui>
     <MauiVersion>11.0.0-preview.5.26304.4</MauiVersion>
@@ -26,7 +34,8 @@
 
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+    <!-- .NET 11 raised the minimum supported Android API from 21 to 24 (CoreCLR requires API 24). -->
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
   </PropertyGroup>
