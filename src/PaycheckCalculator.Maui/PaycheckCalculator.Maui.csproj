@@ -31,6 +31,15 @@
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
   </PropertyGroup>
 
+  <!--
+    Run the Windows head unpackaged (no MSIX). This removes the "Deploy" step that
+    packaged apps require, so F5 debugging works without enabling Deploy in the
+    Configuration Manager. Produce a packaged build separately for Store/release.
+  -->
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <WindowsPackageType>None</WindowsPackageType>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- App icon -->
     <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#1F3A5F" />
