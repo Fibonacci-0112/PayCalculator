@@ -108,7 +108,7 @@ What the MAUI head provides on top of `SharedUi`:
 
 ## Building & running
 
-This repo uses the **.NET 11 SDK (Preview 4, `11.0.100-preview.4.26230.115`)**, pinned in `global.json`. The projects target `net11.0` (the MAUI head multi-targets `net11.0-android`/`-ios`/`-maccatalyst`/`-windows`). Because this is a preview SDK, install it from the [.NET 11 download page](https://dotnet.microsoft.com/download/dotnet/11.0) before building.
+This repo uses the **.NET 11 SDK (Preview 5, `11.0.100-preview.5.26302.115`)**, pinned in `global.json`. The projects target `net11.0` (the MAUI head multi-targets `net11.0-android`/`-ios`/`-maccatalyst`/`-windows`). Because this is a preview SDK, install it from the [.NET 11 download page](https://dotnet.microsoft.com/download/dotnet/11.0) before building.
 
 ```bash
 # Restore + build everything except the MAUI head (the workload-free subset CI uses)
