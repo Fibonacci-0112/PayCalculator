@@ -5,6 +5,9 @@
     <Description>CSV/JSON import and export for paychecks, YTD, projections, budgets, and accountant packet.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="QuestPDF" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\PaycheckCalculator.Core\PaycheckCalculator.Core.csproj" />
     <ProjectReference Include="..\PaycheckCalculator.Reports\PaycheckCalculator.Reports.csproj" />
   </ItemGroup>
