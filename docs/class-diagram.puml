@@ -1,0 +1,483 @@
+@startuml PayCalculator
+'==================================================================
+' PayCalculator - Class Diagram
+' A multi-platform (MAUI / Blazor Web) US paycheck calculator.
+' Grouped by solution assembly. Value-object/DTO members are
+' summarised; data-only records list their key properties.
+'==================================================================
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+'==================================================================
+package "Core.ValueObjects" {
+  struct Money <<readonly record struct>> {
+    +decimal Amount
+    +string Currency
+    +{static} Money Zero
+    +{static} Usd(decimal) : Money
+    +Round(RoundingPolicy) : Money
+    +operators(+ - * / < >)
+  }
+  struct Percent <<readonly record struct>> {
+    +decimal Value
+    +decimal AsFraction
+  }
+  struct TaxYear <<readonly record struct>> {
+    +int Year
+  }
+  struct JurisdictionCode <<readonly record struct>> {
+    +string Code
+  }
+  struct RuleSetVersion <<readonly record struct>> {
+    +string Value
+  }
+  class RoundingPolicy <<record>> {
+    +int Decimals
+    +MidpointRounding Mode
+    +string Name
+    +Round(decimal) : decimal
+  }
+  enum FilingStatus
+  enum WorkerType
+  enum ResidencyStatus
+  enum ConfidenceLevel
+  enum JurisdictionConfidence
+  enum PayFrequency
+  class PayFrequencyExtensions <<static>> {
+    +AnnualPeriods(PayFrequency) : int
+    +IsExtendedPeriod(PayFrequency) : bool
+  }
+}
+
+'==================================================================
+package "Core.Earnings / Deductions / W4 / Household / Ytd" {
+  enum EarningType
+  enum TaxTreatmentCode
+  class EarningLineInput <<record>> {
+    +EarningType Type
+    +Money Amount
+    +decimal? Hours
+    +bool IsSupplemental
+    +TaxTreatmentCode TaxTreatment
+  }
+
+  enum DeductionType
+  enum DeductionAmountType
+  enum TaxTreatment
+  class DeductionTaxTreatment <<record>> {
+    +TaxTreatment FederalIncomeTax
+    +TaxTreatment SocialSecurity
+    +TaxTreatment Medicare
+    +TaxTreatment State
+    +TaxTreatment Local
+  }
+  class DeductionInput <<record>> {
+    +DeductionType Type
+    +DeductionAmountType AmountType
+    +decimal Amount
+    +Money? AnnualLimit
+    +DeductionTaxTreatment? OverrideTreatment
+  }
+
+  class W4Profile <<record>> {
+    +FilingStatus FilingStatus
+    +bool MultipleJobsOrSpouseWorks
+    +Money Step3DependentsCredit
+    +Money Step4cExtraWithholdingPerPeriod
+    +{static} Default(FilingStatus) : W4Profile
+  }
+  class HouseholdTaxProfile <<record>> {
+    +FilingStatus FilingStatus
+    +int DependentChildrenUnder17
+    +Money EstimatedItemizedDeductionsAnnual
+    +Money PriorYearTotalTaxLiability
+    +{static} Default(FilingStatus) : HouseholdTaxProfile
+  }
+  class YtdSnapshot <<record>> {
+    +DateOnly AsOfDate
+    +TaxYear TaxYear
+    +Money GrossWages
+    +Money FederalWithholding
+    +int CompletedPayPeriods
+    +Apply(YtdDelta) : YtdSnapshot
+    +{static} Empty(TaxYear) : YtdSnapshot
+  }
+  class YtdDelta <<record>> {
+    +DateOnly PayDate
+    +Money GrossWages
+    +Money FederalWithholding
+  }
+}
+
+'==================================================================
+package "Core.Jurisdictions" {
+  enum TaxAuthorityType
+  class TaxAuthorityRef <<record>> {
+    +string AuthorityId
+    +string DisplayName
+    +TaxAuthorityType AuthorityType
+    +string JurisdictionCode
+  }
+  class AddressResolution <<record>> {
+    +string? StateCode
+    +string? County
+    +JurisdictionConfidence Confidence
+  }
+  class ReciprocityRuleRef <<record>>
+  class AllocationRuleRef <<record>>
+  class JurisdictionContext <<record>> {
+    +ResidencyStatus ResidencyStatus
+    +string ResidentStateCode
+    +string? WorkStateCode
+    +JurisdictionConfidence Confidence
+    +{static} FederalOnly() : JurisdictionContext
+  }
+}
+
+'==================================================================
+package "Core.Calculations" {
+  enum WarningCategory
+  enum WarningSeverity
+  enum TaxRuleSupportLevel
+
+  class PaycheckInput <<record>> {
+    +Guid ScenarioId
+    +TaxYear TaxYear
+    +PayFrequency PayFrequency
+    +WorkerType WorkerType
+    +DateOnly PayDate
+  }
+  class CalculationResult <<record>> {
+    +Guid ScenarioId
+    +Money GrossPay
+    +Money NetPay
+    +Money TotalFederalTax
+    +Money TotalFica
+    +Money TotalStateAndLocal
+  }
+  class TaxLineResult <<record>> {
+    +string TaxType
+    +Money TaxableWages
+    +Money TaxAmount
+    +TaxRuleSupportLevel SupportLevel
+  }
+  class DeductionResult <<record>> {
+    +DeductionType Type
+    +Money Amount
+    +bool IsPreTaxForFederal
+  }
+  class ExplainLine <<record>> {
+    +string LineId
+    +string Label
+    +Money Amount
+    +string FormulaText
+  }
+  class DiagnosticWarning <<record>> {
+    +WarningCategory Category
+    +WarningSeverity Severity
+    +string Message
+  }
+  class AnnualProjectionSnapshot <<record>> {
+    +Money ProjectedRefundOrAmountDue
+    +ConfidenceLevel Confidence
+  }
+  class CalculationAudit <<record>> {
+    +DateTimeOffset GeneratedAt
+    +string EngineVersion
+  }
+}
+
+'==================================================================
+package "TaxRules" {
+  class FederalRule2026 <<static>> {
+    +{static} string Version
+    +{static} decimal SocialSecurityRateEmployee
+    +{static} decimal MedicareRateEmployee
+    +{static} StandardBracketsFor(FilingStatus) : IReadOnlyList<TaxBracket>
+    +{static} ToRuleSet() : TaxRuleSet
+  }
+  class StateRuleCatalog2026 <<static>> {
+    +{static} StateWithholdingRule Colorado
+    +{static} StateWithholdingRule Illinois
+    +{static} StateWithholdingRule Pennsylvania
+    +{static} TryGet(string, out StateWithholdingRule) : bool
+  }
+  class TaxRuleSet <<record>> {
+    +string RuleSetId
+    +TaxYear TaxYear
+    +string RuleSetVersion
+    +IReadOnlyList<TaxTable> Tables
+  }
+  class TaxRuleSetBundle <<record>> {
+    +TaxYear TaxYear
+    +TaxRuleSet Federal
+    +AllRuleSetVersions() : IEnumerable<string>
+  }
+  class StateWithholdingRule <<record>> {
+    +string StateCode
+    +IReadOnlyList<TaxBracket> Brackets
+    +StandardDeductionFor(FilingStatus) : decimal
+    +ToRuleSet() : TaxRuleSet
+  }
+  class TaxBracket <<record>> {
+    +decimal Floor
+    +decimal? Ceiling
+    +decimal BaseTax
+    +decimal MarginalRate
+  }
+  class TaxTable <<record>>
+  interface IRulePackageRegistry {
+    +GetBundle(TaxYear) : TaxRuleSetBundle
+    +GetFederalRuleSet(TaxYear) : TaxRuleSet
+  }
+  class InMemoryRulePackageRegistry
+  class RulePackageVerification <<static>> {
+    +{static} CanonicalBytes(TaxRuleSet) : byte[]
+    +{static} VerifyEd25519(TaxRuleSet, byte[]) : bool
+  }
+}
+
+'==================================================================
+package "Jurisdictions" {
+  class JurisdictionRequest <<record>>
+  class GeocodeResult <<record>>
+  interface IGeocodingProvider {
+    +GeocodeAsync(JurisdictionRequest, CancellationToken) : Task<GeocodeResult?>
+  }
+  interface IBoundaryProvider {
+    +ResolveAuthoritiesAsync(GeocodeResult, TaxYear, CancellationToken) : Task<IReadOnlyList<TaxAuthorityRef>>
+  }
+  interface IJurisdictionResolver {
+    +ResolveAsync(JurisdictionRequest, CancellationToken) : Task<JurisdictionContext>
+  }
+  class ManualJurisdictionResolver
+}
+
+'==================================================================
+package "Payroll.Engine" {
+  interface IPaycheckCalculator {
+    +Calculate(PaycheckInput, TaxRuleSetBundle) : CalculationResult
+  }
+  class PaycheckPipeline {
+    +{static} string EngineVersion
+    +Calculate(PaycheckInput, TaxRuleSetBundle) : CalculationResult
+  }
+  class BracketMath <<static>> {
+    +{static} Apply(decimal, IReadOnlyList<TaxBracket>) : decimal
+  }
+  class ExplainabilityWriter {
+    +IReadOnlyList<ExplainLine> Lines
+    +Add(ExplainLine) : void
+  }
+}
+
+package "Payroll.Calculators" {
+  class EarningsNormalizer {
+    +Normalize(IEnumerable<EarningLineInput>) : IReadOnlyList<NormalizedEarning>
+  }
+  class NormalizedEarning <<record>>
+  class DeductionClassifier <<static>> {
+    +{static} Classify(DeductionType) : DeductionTaxTreatment
+  }
+  class FederalWithholdingCalculator {
+    +Calculate(FederalWithholdingContext, ExplainabilityWriter) : TaxLineResult
+  }
+  class FicaCalculator {
+    +Calculate(FicaContext, ExplainabilityWriter, ICollection<DiagnosticWarning>) : IReadOnlyList<TaxLineResult>
+  }
+  class SupplementalWageCalculator {
+    +CalculateFlatSupplemental(...) : TaxLineResult?
+  }
+  class StateWithholdingCalculator {
+    +Calculate(StateWithholdingContext, ExplainabilityWriter) : TaxLineResult
+  }
+}
+
+'==================================================================
+package "Projections / SelfEmployment / Budgeting" {
+  enum OptimizationGoal
+  class OptimizationRequest <<record>>
+  class OptimizationSuggestion <<record>>
+  class OptimizationEngine {
+    +Suggest(OptimizationRequest) : OptimizationSuggestion
+  }
+  class ScheduleCInput <<record>>
+  class SelfEmploymentResult <<record>>
+  class ScheduleSeCalculator {
+    +Calculate(ScheduleCInput, RoundingPolicy) : SelfEmploymentResult
+  }
+  class BudgetPlan <<record>>
+  class BudgetCategory <<record>>
+  class BudgetTransaction <<record>>
+  class PaydayBudgetAllocator {
+    +Allocate(Money, IReadOnlyList<BudgetCategory>) : IReadOnlyList<...>
+  }
+}
+
+'==================================================================
+package "Reports / ImportExport" {
+  class PaycheckReportModel <<record>>
+  class AnnualProjectionReportModel <<record>>
+  class AccountantPacketModel <<record>>
+  class PaycheckCsvExporter {
+    +Export(CalculationResult) : string
+  }
+}
+
+'==================================================================
+package "SharedUi" {
+  interface IPaycheckScenarioStore {
+    +ListAsync(...) : Task<IReadOnlyList<CalculationResult>>
+    +SaveAsync(CalculationResult, string, ...) : Task
+    +DeleteAsync(Guid, ...) : Task
+  }
+  class InMemoryPaycheckScenarioStore
+  class ScenarioEditorState {
+    +CalculationResult? LatestResult
+    +Recalculate() : CalculationResult
+    +event Action? Changed
+  }
+  class PaycheckScenarioViewModel {
+    +ToInput() : PaycheckInput
+  }
+  class ServiceCollectionExtensions <<static>>
+  class EnumDisplay <<static>>
+}
+
+'==================================================================
+package "Sync" {
+  class EncryptedEnvelope <<record>> {
+    +Guid SyncItemId
+    +byte[] Nonce
+    +byte[] Ciphertext
+  }
+  class EnvelopeEncryptor {
+    +Encrypt<T>(...) : EncryptedEnvelope
+    +Decrypt<T>(EncryptedEnvelope, byte[]) : T
+  }
+  interface ISecurePlatformStorage
+  interface ILocalDataPathProvider
+  interface IBiometricUnlock
+  interface IAppLifecycleEvents
+}
+
+package "Maui.Services" {
+  class MauiSecureStorage
+  class MauiBiometricUnlock
+  class MauiLocalDataPathProvider
+  class MauiAppLifecycleEvents
+}
+
+'==================================================================
+' RELATIONSHIPS
+'==================================================================
+
+' --- Inputs / composition into PaycheckInput
+PaycheckInput "1" o-- "*" EarningLineInput
+PaycheckInput "1" o-- "*" DeductionInput
+PaycheckInput "1" o-- "0..1" W4Profile
+PaycheckInput "1" o-- "1" HouseholdTaxProfile
+PaycheckInput "1" o-- "1" JurisdictionContext
+PaycheckInput "1" o-- "1" YtdSnapshot
+PaycheckInput ..> PayFrequency
+PaycheckInput ..> WorkerType
+
+' --- Results composition
+CalculationResult "1" o-- "*" TaxLineResult
+CalculationResult "1" o-- "*" DeductionResult
+CalculationResult "1" o-- "*" ExplainLine
+CalculationResult "1" o-- "*" DiagnosticWarning
+CalculationResult "1" o-- "1" AnnualProjectionSnapshot
+CalculationResult "1" o-- "1" CalculationAudit
+CalculationResult "1" o-- "1" YtdDelta
+TaxLineResult o-- TaxAuthorityRef
+DeductionInput o-- DeductionTaxTreatment
+EarningLineInput ..> EarningType
+DeductionInput ..> DeductionType
+
+' --- Jurisdiction composition
+JurisdictionContext o-- AddressResolution
+JurisdictionContext o-- "*" TaxAuthorityRef
+JurisdictionContext o-- "*" ReciprocityRuleRef
+JurisdictionContext o-- "*" AllocationRuleRef
+YtdSnapshot ..> YtdDelta
+
+' --- Tax rules
+TaxRuleSet o-- "*" TaxTable
+TaxTable o-- "*" TaxBracket
+StateWithholdingRule o-- "*" TaxBracket
+TaxRuleSetBundle o-- "1" TaxRuleSet : Federal
+TaxRuleSetBundle o-- "*" StateWithholdingRule
+IRulePackageRegistry <|.. InMemoryRulePackageRegistry
+InMemoryRulePackageRegistry ..> TaxRuleSetBundle
+InMemoryRulePackageRegistry ..> FederalRule2026
+InMemoryRulePackageRegistry ..> StateRuleCatalog2026
+FederalRule2026 ..> TaxRuleSet
+StateRuleCatalog2026 ..> StateWithholdingRule
+
+' --- Jurisdiction resolution
+IJurisdictionResolver <|.. ManualJurisdictionResolver
+ManualJurisdictionResolver ..> JurisdictionContext
+
+' --- Engine
+IPaycheckCalculator <|.. PaycheckPipeline
+PaycheckPipeline ..> PaycheckInput
+PaycheckPipeline ..> CalculationResult
+PaycheckPipeline o-- EarningsNormalizer
+PaycheckPipeline o-- FederalWithholdingCalculator
+PaycheckPipeline o-- FicaCalculator
+PaycheckPipeline o-- SupplementalWageCalculator
+PaycheckPipeline o-- StateWithholdingCalculator
+PaycheckPipeline ..> DeductionClassifier
+PaycheckPipeline ..> ExplainabilityWriter
+PaycheckPipeline ..> TaxRuleSetBundle
+
+EarningsNormalizer ..> NormalizedEarning
+FederalWithholdingCalculator ..> BracketMath
+FederalWithholdingCalculator ..> FederalRule2026
+FederalWithholdingCalculator ..> TaxLineResult
+FicaCalculator ..> FederalRule2026
+FicaCalculator ..> TaxLineResult
+SupplementalWageCalculator ..> FederalRule2026
+StateWithholdingCalculator ..> BracketMath
+StateWithholdingCalculator ..> StateWithholdingRule
+BracketMath ..> TaxBracket
+ExplainabilityWriter o-- "*" ExplainLine
+
+' --- Projections / SE / Budgeting
+OptimizationEngine ..> OptimizationRequest
+OptimizationEngine ..> OptimizationSuggestion
+OptimizationRequest o-- AnnualProjectionSnapshot
+ScheduleSeCalculator ..> ScheduleCInput
+ScheduleSeCalculator ..> SelfEmploymentResult
+ScheduleSeCalculator ..> FederalRule2026
+PaydayBudgetAllocator ..> BudgetCategory
+
+' --- Reports / export
+PaycheckReportModel o-- PaycheckInput
+PaycheckReportModel o-- CalculationResult
+AccountantPacketModel o-- PaycheckReportModel
+AccountantPacketModel o-- AnnualProjectionReportModel
+AnnualProjectionReportModel o-- AnnualProjectionSnapshot
+PaycheckCsvExporter ..> CalculationResult
+
+' --- SharedUi
+IPaycheckScenarioStore <|.. InMemoryPaycheckScenarioStore
+IPaycheckScenarioStore ..> CalculationResult
+ScenarioEditorState ..> IPaycheckCalculator
+ScenarioEditorState ..> IRulePackageRegistry
+ScenarioEditorState o-- CalculationResult
+PaycheckScenarioViewModel ..> PaycheckInput
+
+' --- Sync / Maui platform implementations
+EnvelopeEncryptor ..> EncryptedEnvelope
+ISecurePlatformStorage <|.. MauiSecureStorage
+IBiometricUnlock <|.. MauiBiometricUnlock
+ILocalDataPathProvider <|.. MauiLocalDataPathProvider
+IAppLifecycleEvents <|.. MauiAppLifecycleEvents
+
+@enduml
