@@ -9,7 +9,7 @@
       Pinning makes restore deterministic. Versions track the .NET 11 workload defaults:
       Android API 36, iOS 18.2, Mac Catalyst 18.2.
     -->
-    <TargetFrameworks>net11.0-android36.0;net11.0-ios18.2;net11.0-maccatalyst18.2</TargetFrameworks>
+    <TargetFrameworks>net11.0-android36.0;net11.0-ios26.5;net11.0-maccatalyst26.5</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
     <UseMaui>true</UseMaui>
     <MauiVersion>11.0.0-preview.5.26304.4</MauiVersion>
