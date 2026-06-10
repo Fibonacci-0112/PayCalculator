@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PaycheckCalculator.SelfEmployment</RootNamespace>
     <Description>Schedule C and Schedule SE planning module: tax buckets, QBI estimate, half-SE-tax adjustment.</Description>
   </PropertyGroup>

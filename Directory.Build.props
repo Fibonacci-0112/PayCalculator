@@ -7,7 +7,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
-    <!-- NU1510: on net11.0 several referenced packages (System.Text.Json,
+    <!-- NU1510: on net10.0 several referenced packages (System.Text.Json,
          Microsoft.Extensions.* abstractions, AspNetCore.Components) now ship in the
          shared framework. Suppress the "remove redundant reference" advisory rather
          than dropping the explicit version pins. -->
