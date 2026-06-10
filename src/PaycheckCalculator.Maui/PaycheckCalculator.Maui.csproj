@@ -11,6 +11,16 @@
     -->
     <TargetFrameworks>net11.0-android37.0;net11.0-ios26.5;net11.0-maccatalyst26.5</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
+
+    <!--
+      This is the MAUI application head, so it must produce an executable. Without an
+      explicit OutputType the Microsoft.NET.Sdk.Razor SDK defaults to "Library", which
+      makes the project un-runnable: "A project with an output type of class library
+      cannot be started directly." The MAUI/Android build tooling still emits the
+      correct library/APK output for the Android TFM from an Exe output type, so this
+      is set unconditionally to match the default MAUI app template.
+    -->
+    <OutputType>Exe</OutputType>
     <UseMaui>true</UseMaui>
     <MauiVersion>11.0.0-preview.5.26304.4</MauiVersion>
     <SingleProject>true</SingleProject>
