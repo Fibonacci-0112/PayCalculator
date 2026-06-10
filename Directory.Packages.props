@@ -17,8 +17,6 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
     <PackageVersion Include="FluentAssertions" Version="8.10.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-    <!-- PDF generation for ImportExport (accountant packet, reports) -->
-    <PackageVersion Include="QuestPDF" Version="2026.5.0" />
     <!-- MAUI Blazor Hybrid head -->
     <PackageVersion Include="Microsoft.Maui.Controls" Version="11.0.0-preview.5.26304.4" />
     <PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="11.0.0-preview.5.26304.4" />
