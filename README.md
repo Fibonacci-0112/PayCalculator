@@ -62,8 +62,8 @@ To build the MAUI head itself, install the workload and target a framework match
 
 ```bash
 dotnet workload install maui
-dotnet build src/PaycheckCalculator.Maui/PaycheckCalculator.Maui.csproj -f net11.0-android
-# or -f net11.0-ios / net11.0-maccatalyst / net11.0-windows10.0.19041.0 on the appropriate host OS
+dotnet build src/PaycheckCalculator.Maui/PaycheckCalculator.Maui.csproj -f net10.0-android
+# or -f net10.0-ios / net10.0-maccatalyst / net10.0-windows10.0.19041.0 on the appropriate host OS
 ```
 
 Project references inside the MAUI csproj pull in `PaycheckCalculator.SharedUi`, `PaycheckCalculator.Sync`, and `PaycheckCalculator.ImportExport` transitively, so a single build command compiles everything the MAUI head needs. With the workload installed you can also build the entire solution — MAUI included — with `dotnet build PaycheckCalculator.slnx`.
@@ -108,7 +108,7 @@ What the MAUI head provides on top of `SharedUi`:
 
 ## Building & running
 
-This repo uses the **.NET 11 SDK (Preview 5, `11.0.100-preview.5.26302.115`)**, pinned in `global.json`. The projects target `net11.0` (the MAUI head multi-targets `net11.0-android`/`-ios`/`-maccatalyst`/`-windows`). Because this is a preview SDK, install it from the [.NET 11 download page](https://dotnet.microsoft.com/download/dotnet/11.0) before building.
+This repo uses the **.NET 10 SDK (`10.0.301`)**, pinned in `global.json`. The projects target `net10.0` (the MAUI head multi-targets `net10.0-android`/`-ios`/`-maccatalyst`/`-windows`). Install it from the [.NET 10 download page](https://dotnet.microsoft.com/download/dotnet/10.0) before building.
 
 ```bash
 # Restore + build everything except the MAUI head (the workload-free subset CI uses)

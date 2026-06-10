@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PaycheckCalculator.Reports</RootNamespace>
     <Description>Report view models for paycheck, projection, self-employment, YTD, scenario comparison, and accountant packet.</Description>
   </PropertyGroup>

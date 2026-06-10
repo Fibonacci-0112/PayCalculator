@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PaycheckCalculator.TaxRules</RootNamespace>
     <Description>Versioned tax-rule data packages and signed rule registry for the Paycheck Tax Planning App.</Description>
   </PropertyGroup>

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PaycheckCalculator.Api</RootNamespace>
     <Description>ASP.NET Core minimal API for E2EE sync, signed rule package delivery, and jurisdiction lookup proxy.</Description>
   </PropertyGroup>

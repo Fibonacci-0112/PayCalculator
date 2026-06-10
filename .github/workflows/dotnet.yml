@@ -19,7 +19,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '11.0.100-preview.5.26302.115'
+        dotnet-version: '10.0.301'
     # ubuntu-latest has neither the .NET MAUI workload nor the iOS/Mac Catalyst/Windows
     # build hosts, so the MAUI head can't be restored or built here. Restore, build, and
     # test the PaycheckCalculator.CI.slnf solution filter, which includes every project

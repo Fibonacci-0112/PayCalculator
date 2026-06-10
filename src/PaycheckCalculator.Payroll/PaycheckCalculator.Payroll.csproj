@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PaycheckCalculator.Payroll</RootNamespace>
     <Description>Paycheck calculation pipeline: earnings normalization, deduction classification, federal withholding, FICA, and supplemental wages.</Description>
   </PropertyGroup>
