@@ -26,8 +26,8 @@ jobs:
     # except the MAUI head. Developers build the full PaycheckCalculator.slnx (MAUI
     # included) locally after `dotnet workload install maui`.
     - name: Restore dependencies
-      run: dotnet restore PaycheckCalculator.CI.slnf
+      run: dotnet restore PaycheckCalculator.slnx
     - name: Build
-      run: dotnet build PaycheckCalculator.CI.slnf --no-restore
+      run: dotnet build PaycheckCalculator.slnx --no-restore
     - name: Test
-      run: dotnet test PaycheckCalculator.CI.slnf --no-build --verbosity normal
+      run: dotnet test PaycheckCalculator.slnx --no-build --verbosity normal
